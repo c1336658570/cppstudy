@@ -2,7 +2,7 @@
     本质：引用的本质在c++内部是一个指针常量
 */
 
-# include <iostream>
+#include <iostream>
 using namespace std;
 
 void func(int &ref)

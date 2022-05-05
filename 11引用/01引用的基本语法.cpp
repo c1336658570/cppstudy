@@ -4,7 +4,7 @@
     int &b = a;
 */
 
-# include <iostream>
+#include <iostream>
 using namespace std;
 
 int main(void)
@@ -19,7 +19,7 @@ int main(void)
     cout << "b = " << b << endl;
 
     b = 100;
-    
+
     cout << "a = " << a << endl;
     cout << "b = " << b << endl;
 

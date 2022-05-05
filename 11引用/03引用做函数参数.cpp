@@ -1,9 +1,9 @@
-# include <iostream>
+#include <iostream>
 using namespace std;
 
 //交换两个数
 
-//1.值传递
+// 1.值传递
 void mySwap01(int a, int b)
 {
     int temp = a;
@@ -15,7 +15,7 @@ void mySwap01(int a, int b)
     */
 }
 
-//2.地址传递
+// 2.地址传递
 void mySwap02(int *a, int *b)
 {
     int temp = *a;
@@ -23,14 +23,13 @@ void mySwap02(int *a, int *b)
     *b = temp;
 }
 
-//3.引用传递
+// 3.引用传递
 void mySWap03(int &a, int &b)
 {
     int temp = a;
     a = b;
     b = temp;
 }
-
 
 int main(void)
 {

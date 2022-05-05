@@ -1,4 +1,4 @@
-# include <iostream>
+#include <iostream>
 using namespace std;
 
 int *func()
@@ -16,7 +16,7 @@ void test02()
 
     for (int i = 0; i < 10; ++i)
     {
-        arr[i] = i+100;
+        arr[i] = i + 100;
     }
     for (int i = 0; i < 10; ++i)
     {
@@ -36,14 +36,13 @@ void test01()
 
     //释放堆区内存
     delete p;
-    //cout << *p << endl;
+    // cout << *p << endl;
 }
 
 int main(void)
 {
     test01();
     test02();
-    
 
     return 0;
 }

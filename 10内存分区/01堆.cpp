@@ -1,4 +1,4 @@
-# include <iostream>
+#include <iostream>
 using namespace std;
 
 int *func()
@@ -12,7 +12,7 @@ int *func()
 int main(void)
 {
     int *p = func();
-    
+
     cout << *p << endl;
 
     return 0;
