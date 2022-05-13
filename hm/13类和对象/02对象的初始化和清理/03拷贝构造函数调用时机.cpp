@@ -45,6 +45,7 @@ void test01()
 // 2.值传递的方式给函数参数传值
 void doWork(Person p)
 {
+    p.m_Age = 100;
 }
 
 void test02()

@@ -4,6 +4,7 @@ void Point::setX(int x)
 {
     m_X = x;
 }
+
 //获取x
 int Point::getX()
 {

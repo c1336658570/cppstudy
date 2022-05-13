@@ -81,10 +81,10 @@ public:
 void test01()
 {
     Person p1(18, 160);
-    cout << "p1的年龄为：" << p1.m_Age << endl;
+    cout << "p1的年龄为：" << p1.m_Age << "身高为：" << *p1.m_Height  << endl;
 
     Person p2(p1);
-    cout << "p2的年龄为：" << p2.m_Age << endl;
+    cout << "p2的年龄为：" << p2.m_Age << "身高为：" << *p2.m_Height << endl;
 }
 
 void test02()
