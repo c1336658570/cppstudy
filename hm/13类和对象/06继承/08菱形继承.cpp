@@ -28,6 +28,8 @@ class Tuo : virtual public Animal
 //利用虚继承 解决菱形继承的问题
 //继承之前加上关键字virtual变为虚继承
 //Animal类称为虚基类
+//本质  继承了Sheep和Tuo的虚基类指针(vbptr   virtual base pointer)，
+//该指针指向一个虚基类表(vbtable)，通过虚基类表和偏移量，能找到唯一的m_Age;
 //羊驼类
 class SheepTuo : public Sheep, public Tuo
 {
