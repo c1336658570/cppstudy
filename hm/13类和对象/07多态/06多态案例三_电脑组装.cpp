@@ -36,6 +36,7 @@ public:
 class Computer
 {
 public:
+    //多态，父类指针调用子类函数
     Computer(CPU *cpu, VideoCard *vc, Memory *mem)
     {
         m_cpu = cpu;
