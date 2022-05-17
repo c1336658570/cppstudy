@@ -1,7 +1,12 @@
 #include "workerManager.h"
+#include "worker.h"
+#include "employee.h"
+#include "manager.h"
+#include "boss.h"
 
 int main(void)
 {
+
     //实例化管理者对象
     WorkerManager wm;
     int choice = 0; //存储用户的选项
