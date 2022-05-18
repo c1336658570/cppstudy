@@ -1,8 +1,12 @@
 #pragma once //防止头文件重复包含
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "worker.h"
-using namespace std; //使用标准命名空间
 
+#define FILENAME "empFile.txt"
+
+using namespace std; //使用标准命名空间
 
 class WorkerManager
 {
@@ -24,6 +28,18 @@ public:
 
     //添加职工
     void Add_Emp();
+
+    //保存文件
+    void save();
+
+    //标志文件是否为空
+    bool m_FileIsEmpty;
+
+    //统计人数
+    int get_EmpNum();
+
+    //初始化员工
+    void init_Emp();
 
     //析构函数
     ~WorkerManager();
