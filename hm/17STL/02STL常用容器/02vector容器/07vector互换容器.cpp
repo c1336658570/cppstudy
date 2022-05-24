@@ -17,10 +17,11 @@ using namespace std;
 void printVector(vector<int> &v)
 {
 
-    for (vector<int>::iterator it = v.begin(); it != v.end(); it++)
+    for (vector<int>::iterator it = v.begin(); it != v.end(); ++it)
     {
         cout << *it << " ";
     }
+
     cout << endl;
 }
 
@@ -31,6 +32,7 @@ void test01()
     {
         v1.push_back(i);
     }
+    cout << "交换前：" << endl;
     printVector(v1);
 
     vector<int> v2;
@@ -47,6 +49,8 @@ void test01()
     printVector(v2);
 }
 
+// 2.实际用途
+//巧用swap可以收缩内存空间
 void test02()
 {
     vector<int> v;
@@ -58,13 +62,13 @@ void test02()
     cout << "v的容量为：" << v.capacity() << endl;
     cout << "v的大小为：" << v.size() << endl;
 
-    v.resize(3);
+    v.resize(3); //重新指定大小
 
     cout << "v的容量为：" << v.capacity() << endl;
     cout << "v的大小为：" << v.size() << endl;
 
     //收缩内存
-    vector<int>(v).swap(v); //匿名对象
+    vector<int>(v).swap(v); //匿名对象 拷贝构造，利用v初始化一个匿名对象（匿名对象的大小和容量是v的大小）
 
     cout << "v的容量为：" << v.capacity() << endl;
     cout << "v的大小为：" << v.size() << endl;

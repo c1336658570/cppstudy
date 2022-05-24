@@ -46,6 +46,7 @@ void test01()
         cout << "pos = " << pos << endl;
     }
 
+    // rfind从右往左找，find从左往右找
     pos = str1.rfind("de");
 
     cout << "pos = " << pos << endl;
@@ -55,7 +56,7 @@ void test02()
 {
     //替换
     string str1 = "abcdefgde";
-    str1.replace(1, 3, "1111");
+    str1.replace(1, 3, "1111"); //从1号起3个字符替换为"1111"
 
     cout << "str1 = " << str1 << endl;
 }

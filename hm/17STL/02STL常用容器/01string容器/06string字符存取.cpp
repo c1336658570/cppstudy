@@ -16,12 +16,14 @@ void test01()
 {
     string str = "hello world";
 
+    //通过[]访问单个字符
     for (int i = 0; i < str.size(); i++)
     {
         cout << str[i] << " ";
     }
     cout << endl;
 
+    //通过 at方式访问单个字符
     for (int i = 0; i < str.size(); i++)
     {
         cout << str.at(i) << " ";

@@ -49,7 +49,8 @@ void test01()
     //尾删
     v1.pop_back();
     printVector(v1);
-    //插入
+
+    //插入 第一个参数是迭代器
     v1.insert(v1.begin(), 100);
     printVector(v1);
 

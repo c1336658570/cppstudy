@@ -44,6 +44,7 @@ void test01()
     v3.assign(v1.begin(), v1.end());
     printVector(v3);
 
+    // n个elem
     vector<int> v4;
     v4.assign(10, 100);
     printVector(v4);
