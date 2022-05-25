@@ -34,6 +34,7 @@ void test01()
 
     //逻辑非  将v容器搬运到v2中，并执行逻辑非运算
     vector<bool> v2;
+    // v2初始无大小，无法搬运进去，必须先指定大小
     v2.resize(v.size());
     transform(v.begin(), v.end(), v2.begin(), logical_not<bool>());
     for (vector<bool>::iterator it = v2.begin(); it != v2.end(); it++)

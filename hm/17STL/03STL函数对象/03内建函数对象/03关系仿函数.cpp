@@ -21,6 +21,7 @@ template<class T> bool less_equal<T>               //小于等于
 #include <algorithm>
 using namespace std;
 
+//大于 greater
 class MyCompare
 {
 public:
@@ -29,6 +30,7 @@ public:
         return v1 > v2;
     }
 };
+
 void test01()
 {
     vector<int> v;

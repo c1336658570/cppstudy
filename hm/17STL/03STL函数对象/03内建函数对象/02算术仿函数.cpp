@@ -1,6 +1,7 @@
 /*
-功能描述：
+算术仿函数
 
+功能描述：
 实现四则运算
 其中negate是一元运算，其他都是二元运算
 
@@ -19,16 +20,17 @@ template<class T> T negate<T>           //取反仿函数
 #include <functional>
 using namespace std;
 
-// negate
+// negate 一元仿函数 取反仿函数
 void test01()
 {
     negate<int> n;
     cout << n(50) << endl;
 }
 
-// plus
+// plus 二元仿函数 加法
 void test02()
 {
+    //<>内只需要写一个int
     plus<int> p;
     cout << p(10, 20) << endl;
 }
