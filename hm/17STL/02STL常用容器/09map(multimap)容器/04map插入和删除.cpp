@@ -42,6 +42,7 @@ void test01()
     //第三种插入方式
     m.insert(map<int, int>::value_type(3, 30));
     //第四种插入方式
+    //[]不建议插入，用途 可以利用key访问到value
     m[4] = 40;
     printMap(m);
 
@@ -49,7 +50,7 @@ void test01()
     m.erase(m.begin());
     printMap(m);
 
-    m.erase(3);
+    m.erase(3); //按照key删除
     printMap(m);
 
     //清空

@@ -109,7 +109,6 @@ void showWorkerByGourp(multimap<int, Worker> &m)
 
 int main()
 {
-
     srand((unsigned int)time(NULL));
 
     // 1、创建员工
@@ -128,8 +127,6 @@ int main()
     //{
     //	cout << "姓名： " << it->m_Name << " 工资： " << it->m_Salary << endl;
     // }
-
-    system("pause");
 
     return 0;
 }
