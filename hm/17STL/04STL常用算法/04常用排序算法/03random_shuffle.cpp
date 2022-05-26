@@ -37,6 +37,7 @@ public:
 
 void test01()
 {
+    //设置随机数种子，导致random_shuffle每次结果不同
     srand((unsigned int)time(NULL));
     vector<int> v;
     for (int i = 0; i < 10; i++)
