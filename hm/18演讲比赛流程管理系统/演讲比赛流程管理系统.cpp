@@ -3,6 +3,7 @@
 */
 
 #include <iostream>
+#include <string>
 using namespace std;
 #include "speechManager.h"
 
@@ -11,6 +12,14 @@ int main()
     SpeechManager sm;
 
     int choice = 10; //用来存储用户的选项
+
+    //测试12名选手创建
+    /*
+    for (map<int, Speaker>::iterator it = sm.m_Speaker.begin(); it != sm.m_Speaker.end(); it++)
+    {
+        cout << "选手编号：" << it->first << "姓名：" << it->second.m_Name << "分数：" << it->second.m_Score[0] << endl;
+    }
+    */
 
     while (true)
     {
