@@ -1,6 +1,5 @@
 #pragma once
 #include <iostream>
-using namespace std;
 #include "Identity.h"
 #include <string>
 #include <fstream>
@@ -10,6 +9,7 @@ using namespace std;
 #include "teacher.h"
 #include <algorithm>
 #include "computerRoom.h"
+using namespace std;
 
 //管理员类设计
 class Manager : public Identity

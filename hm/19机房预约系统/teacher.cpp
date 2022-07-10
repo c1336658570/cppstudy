@@ -34,8 +34,7 @@ void Teacher::showAllOrder()
 	if (of.m_Size == 0)
 	{
 		cout << "无预约记录" << endl;
-		system("pause");
-		system("cls");
+
 		return;
 	}
 
@@ -67,9 +66,6 @@ void Teacher::showAllOrder()
 		}
 		cout << status << endl;
 	}
-
-	system("pause");
-	system("cls");
 }
 //审核预约
 void Teacher::validOrder()
@@ -78,8 +74,7 @@ void Teacher::validOrder()
 	if (of.m_Size == 0)
 	{
 		cout << "无预约记录" << endl;
-		system("pause");
-		system("cls");
+
 		return;
 	}
 
@@ -139,6 +134,4 @@ void Teacher::validOrder()
 		}
 		cout << "输入有误，请重新输入！" << endl;
 	}
-	system("pause");
-	system("cls");
 }

@@ -114,9 +114,6 @@ void Student::applyOrder()
 	ofs << "status:" << 1 << endl;
 
 	ofs.close();
-
-	system("pause");
-	system("cls");
 }
 //查看自身预约
 void Student::showMyOrder()
@@ -125,8 +122,7 @@ void Student::showMyOrder()
 	if (of.m_Size == 0)
 	{
 		cout << "无预约记录！" << endl;
-		system("pause");
-		system("cls");
+
 		return;
 	}
 
@@ -161,9 +157,6 @@ void Student::showMyOrder()
 			cout << status << endl;
 		}
 	}
-
-	system("pause");
-	system("cls");
 }
 
 //查看所有预约
@@ -174,7 +167,7 @@ void Student::showAllOrder()
 	{
 		cout << "无预约记录" << endl;
 		system("pasue");
-		system("cls");
+
 		return;
 	}
 
@@ -206,9 +199,6 @@ void Student::showAllOrder()
 		}
 		cout << status << endl;
 	}
-
-	system("pause");
-	system("cls");
 }
 //取消预约
 void Student::cancelOrder()
@@ -217,8 +207,7 @@ void Student::cancelOrder()
 	if (of.m_Size == 0)
 	{
 		cout << "无预约记录" << endl;
-		system("pause");
-		system("cls");
+
 		return;
 	}
 
@@ -278,7 +267,4 @@ void Student::cancelOrder()
 
 		cout << "输入有误，请重新输入" << endl;
 	}
-
-	system("pause");
-	system("cls");
 }

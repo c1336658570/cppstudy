@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
-using namespace std;
 #include "globalFile.h"
 #include <fstream>
 #include <map>
 #include <string>
+using namespace std;
 
 class OrderFile
 {

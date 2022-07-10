@@ -111,9 +111,6 @@ void Manager::addPerson()
 	ofs << id << " " << name << " " << pwd << " " << endl;
 	cout << "添加成功" << endl;
 
-	system("pause");
-	system("cls");
-
 	ofs.close();
 
 	//调用初始化容器接口，从新获取文件中的数据
@@ -151,9 +148,6 @@ void Manager::showPerson()
 		cout << "所有老师信息如下：" << endl;
 		for_each(vTea.begin(), vTea.end(), printTeacher);
 	}
-
-	system("pause");
-	system("cls");
 }
 
 //查看机房信息
@@ -165,8 +159,6 @@ void Manager::showComputer()
 	{
 		cout << "机房编号： " << it->m_ComId << " 机房最大容量： " << it->m_MaxNum << endl;
 	}
-	system("pause");
-	system("cls");
 }
 
 //清空预约记录
@@ -176,8 +168,6 @@ void Manager::cleanFile()
 	ofs.close();
 
 	cout << "清空成功！" << endl;
-	system("pause");
-	system("cls");
 }
 
 //初始化容器

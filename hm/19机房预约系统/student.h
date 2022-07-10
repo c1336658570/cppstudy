@@ -1,6 +1,5 @@
 #pragma once
 #include <iostream>
-using namespace std;
 #include "Identity.h"
 #include <string>
 #include <vector>
@@ -8,6 +7,7 @@ using namespace std;
 #include <fstream>
 #include "globalFile.h"
 #include "orderFile.h"
+using namespace std;
 
 //学生类
 class Student : public Identity

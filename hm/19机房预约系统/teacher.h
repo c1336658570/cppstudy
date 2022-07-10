@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
-using namespace std;
 #include "Identity.h"
 #include <string>
 #include "orderFile.h"
 #include <vector>
+using namespace std;
 
 //教师类设计
 class Teacher : public Identity
@@ -13,7 +13,7 @@ public:
 	//默认构造
 	Teacher();
 
-	//有参构造
+	//有参构造 职工编号 姓名 密码
 	Teacher(int empId, string name, string pwd);
 
 	//菜单界面

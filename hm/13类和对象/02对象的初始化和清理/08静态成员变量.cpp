@@ -17,7 +17,7 @@ class Person
 {
 public:
     // 1、所有对象都共享同一份数据
-    // 2、编译间断分配内存
+    // 2、编译阶断分配内存
     // 3、类内声明，类外初始化操作
     static int m_A;
 
@@ -52,7 +52,7 @@ void test02()
     // 2、通过类名进行访问
     cout << Person::m_A << endl;
 
-    //cout << Person::m_B << endl;//类外访问不到私有静态成员变量
+    // cout << Person::m_B << endl;//类外访问不到私有静态成员变量
 }
 
 int main(void)
