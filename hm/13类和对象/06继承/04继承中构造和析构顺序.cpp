@@ -8,7 +8,7 @@ using namespace std;
 
 class Base
 {
-    public:
+public:
     Base()
     {
         cout << "Base构造函数！" << endl;
@@ -21,7 +21,7 @@ class Base
 
 class Son : public Base
 {
-    public:
+public:
     Son()
     {
         cout << "Son构造函数！" << endl;
@@ -34,10 +34,10 @@ class Son : public Base
 
 void test01()
 {
-    //Base b;
+    // Base b;
 
     //先创建父类，在创建子类
-    //先创建子类，在创建父类
+    //先析构子类，在析构父类
     Son s;
 }
 

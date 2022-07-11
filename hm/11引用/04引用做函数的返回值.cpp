@@ -4,14 +4,12 @@ using namespace std;
 // 1.不要返回局部变量的引用
 int &test01()
 {
-
     int a = 10;
     return a; //错误
 }
 
 int &test02()
 {
-
     static int a = 10;
     return a;
 }
