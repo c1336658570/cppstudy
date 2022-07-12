@@ -393,3 +393,212 @@ vector<int> vi; //初始为空
 vi = {0, 1, 2, 3, 4, 5 , 6, 7, 8, 9}; //vi含有10个元素，从0-9
 ```
 
+- 移位运算符优先级：比算术运算符优先级低，比关系运算符，赋值运算符和条件运算符优先级高。
+
+```c++
+cout << 42 + 12; //正确
+cout << (10 < 42); //正确
+cout << 10 < 42; //错误：试图比较cout和42！
+```
+
+- sizeof运算符：结果为size_t类型
+
+对数组执行sizeof运算得到整个数组所占空间大小，等价于对数组所有元素sizeof一次，并对所得结果求和，（sizeof不会把数组转成指针来处理）。
+
+堆string对象和vector对象执行sizeof运算只返回该类型固定部分的大小，不会计算对象中的元素占用了多少空间。
+
+- 其他隐式类型转换
+
+当数组被用作decltype关键字的参数，或者作为取地址（&）、sizeof及typeid等运算符的运算对象时，上述转换不会发生。同样，用一个引用来初始化数组，上述转换也不会发生。
+
+- 命名的强制类型转换
+
+```c++
+强制类型转换形式：cast-name<type>(expression);
+type时转换的目标类型而expression时要转换的值。cast-name是static_cast、dynamic_cast、const_cast和reinterpret_cast中的一种。dynamic_cast支持运行时类型识别。
+```
+
+- static_cast
+
+​		任何具有名取定义的类型转换，只要不包含底层const，都可以使用static_cast。
+
+​		例如，通过一个运算对象强制转换成double类型就能使表达式执行浮点数除法。
+
+```c++
+//进行强制类型转换以便执行浮点数除法
+double slope = static_cast<double>(j) / i;
+
+//使用static_cast找回存在于void *指针中的值
+void *p = &d;
+double *dp = static_cast<double*>(p);
+```
+
+- const_cast
+
+​		const_cast只能改变运算对象的底层const
+
+```c++
+//将常量对象转成非常量对象
+const char *pc;
+char *p = const_cast<char *>(pc);
+
+//只有const_cast能改变表达式的常量属性，使用其他形式的命名强制类型转换改变表达式的常量属性都将发生编译器错误。同样的，也不能用const_cast改变表达式的类型
+const char *cp;
+//错误static_cast不能转换掉const性质
+char *q = static_cast<char *>(cp);
+static_cast<string>(cp); //正确：字符串字面值转为string类型
+const_cast<string>(cp); //错误const_cast只改变常量属性
+```
+
+- reinterpret_cast
+
+​		reinterpret_cast通常为运算对象的位模式提供较低层次上的重新解释。例如：
+
+```c++
+int *ip;
+char *pc = reinterpret_cast<char *>(ip);
+//必须记住pc指向真实对象是int而非字符，如果把pc当成普通的字符指针使用就可能运行时发生错误，例如：
+string str(pc);
+//可能导致异常的运行时行为。
+```
+
+## chap5
+
+- 范围for语句
+
+```c++
+for (declaration : expression)
+    statement;
+expression必须是一个序列，比如用花括号括起来的初始值列表、数组或者vector或string等类型的对象，这些类型的共同特点是拥有能返回迭代器begin和end成员。
+declaration定义了一个变量，序列中的每个元素都能转换成该变量的类型。确保类型相容最简单的办法是使用auto类型说明符。如果需要堆序列中的元素执行写操作，循环变量必须声明为引用类型。
+每次迭代都会重新定义循环控制变量，并将其初始化成序列中的下一个值，之后才会执行statement。所有元素处理万循环终止
+```
+
+```c++
+vector<int> v = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+for (auto &r : v)
+{
+    r *= 2;
+}
+
+//等价的传统for语句
+for (auto beg = v.begin(), end = v.end(); beg != end; ++beg)
+{
+    auto &r = *beg;
+    r *= 2;
+}
+
+不能通过范围for语句添加vector对象（或其他容器）的元素。在范围for语句中，预存了end()的值。一旦在这个序列中添加（删除元素），end函数的值可能变的无效了。
+```
+
+- try语句块和异常处理
+
+```c++
+异常处理包括：
+throw表达式，异常检测部分使用了throw表达式来表示它遇到了无法处理的问题，我们说throw引发（raise）了异常。
+tyr语句块，异常处理部分使用try语句块处理异常。try语句块以关键字try开始，并以一个或多个catch子句结束。try语句块中代码抛出的异常通常会被某个catch子句处理。因为catch子句“处理”异常，所以它们也被称作异常处理代码。
+一套异常类，用于在throw表达式和相关的catch子句之间传递异常的具体信息。
+```
+
+- throw表达式
+
+```c++
+程序的异常检测部分使用throw表达式引发一个异常。throw表达式包含关键字throw和紧随其后的一个表达式，其中表达式的类型就是抛出异常的类型。
+
+例如：
+Sales_item item1, item2;
+cin >> item1 >> item2;
+//首先检查item1和item2是否表示同一种书籍
+if (item1.isbn() == item2.isbn())
+{
+    cout << item1 + item2 << endl;
+    return 0;
+}
+else
+{
+    cerr << "Data must refer to same ISBN" << endl;
+    return -1;
+}
+
+//改写程序，使检查完后不再输出一条信息，而是抛出一个异常
+if (item1.isbn() != item2.isbn())
+{
+    throw runtime_error("Data must refer to same ISBN");
+}
+cout << item1 + item2 << endl;
+//如果ISBN不一样就抛出一个异常，该异常类型为runtime_error的对象。抛出异常将终止当前的函数，并把控制权转移给能处理该异常的代码。
+//runtime_error是标准库异常类型的一种，在头文件stdexcept中。
+```
+
+- try语句块
+
+```c++
+语法
+try
+{
+    program-statements
+}
+catch (exception-declaration)
+{
+    handler-statments
+}
+catch (exception-declaration)
+{
+    handler-statments
+}
+//...
+catch子句包括3部分：关键字catch、括号内一个（可能未命名）对象的声明（称作异常声明，exception declaration）以及一个块。当选中了某个catch子句处理异常后，执行与之对应的块。catch一旦完成，程序跳转到try语句块最后一个catch子句之后的那条语句继续执行。
+try语句块中的program-statements组成程序正常逻辑，program-statements可以包括声明在内的任意C++语句。try语句内声明的变量无法在块外访问，特别是catch子句内也无法访问。
+
+//编写处理异常代码
+while (cin >> item1 >> item2)
+{
+    try
+    {
+        //执行添加两个Sales_item对象的代码
+        //如果添加失败，代码抛出一个runtime_error异常
+    }
+    catch (runtime_error err)
+    {
+        //提醒用户两个ISBN必须一致，询问是否重新输入
+        cout << err.what() << "\nTry Again? Enter y or n" << endl;
+        char c;
+        cin >> c;
+        
+        if (!cin || c == 'n')
+        {
+            break; //跳出while循环
+        }
+    }
+}
+
+err.what()返回C风格字符串（即const char *)。其中runtime_error的what成员返回的是初始化一个具体对象时所用的string对象的副本。
+
+//如果编写的代码抛出异常，则catch子句输出
+Data must refer to same ISBN
+Try Again? Enter y or n
+```
+
+- 标准异常（定义在在4个头文件中）
+
+1. exceptrion头文件定义了最通用的异常类exception。它只报告异常的发生，不提供任何额外信息。
+2. stdexcept头文件定义了如下表几种异常类。
+3. new头文件定义了bad_alloc异常类型。
+4. type_info头文件定义了bad_cast异常类型。
+
+```c++
+exception 					最常见的问题
+runtime_error				只有在运行时才能检测出来的问题
+range_error					运行时错误：生成的结果超过了有意义的值域范围
+overflow_error				运行时错误：计算上溢
+underflow_error				运行时错误：计算下溢
+logic_error					程序逻辑错误
+domain_error				逻辑错误：参数对应的结果值不存在
+invalid_argument			逻辑错误：无效参数
+length_error				逻辑错误：试图创建一个超出该类型最大长度的对象
+out_of_range				逻辑错误：使用一个超出有效范围的值
+```
+
+只能以默认初始化方式初始化exception、bad_alloc和bad_cast对象，不允许提供初始值。
+
+其他异常恰好相反：应该使用string对象或C风格字符串初始化这些对象，但是不允许默认初始化的方式。
