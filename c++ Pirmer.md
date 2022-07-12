@@ -602,3 +602,517 @@ out_of_range				逻辑错误：使用一个超出有效范围的值
 只能以默认初始化方式初始化exception、bad_alloc和bad_cast对象，不允许提供初始值。
 
 其他异常恰好相反：应该使用string对象或C风格字符串初始化这些对象，但是不允许默认初始化的方式。
+
+## chap 6
+
+- 数组型参
+
+```c++
+数组的两个特殊性值对我们定义和使用作用在数组上的函数有影响，这两个性质分别是：不允许拷贝数组以及使用数组时（通常）会将其转换成指针。我们不能拷贝数组，所以我们无法以值传递方式使用数组参数。因为数组会被转成指针，当我们传递一个数组时，实际传递的是指向数组首元素的指针。
+void print(const int *);
+void print(const int[]);
+void print(const int [10]);
+//三者等价
+```
+
+- 管理指针型参的三种常用技术
+
+1. 使用标记指定数组长度
+
+```c++
+例如c风格字符串，以空字符结尾
+void print(const char *cp)
+{
+    if (cp)
+    {
+        while (*cp)
+        {
+            cout << *cp++;
+        }
+    }
+}
+//此方法适用于由明显结束标记且不会与普通数据混淆的情况，但是对int类型就不太有效了
+```
+
+2. 使用标准库规范
+
+```c++
+//传递指向数组首元素和尾元素的指针。
+void print(const int *beg, const int *end)
+{
+    while (beg != end)
+    {
+        cout << *beg++ << endl;
+    }
+}
+```
+
+3. 显式传递一个表示数组大小的型参
+
+```c++
+void print(const int ia[], size_t size)
+{
+    for (size_t i = 0; i != size; ++i)
+    {
+        cout << ia[i] << endl;
+    }
+}
+
+//调用
+int j[] = {0, 1};
+print(j, end(j) - begin(j));
+```
+
+- 数组引用型参
+
+```c++
+void pinrt(int (&arr)[10])
+{
+    for (auto elem : arr)
+    {
+        cout << elem << endl;
+    }
+}
+//限制了print函数的可用性，只能将函数作用于大小为10的数组。
+```
+
+- 传递多维数组
+
+```c++
+void print(int (*matrix)[10], int rowSize)
+{
+    
+}
+//等价于
+void print(int matrix[][10], int rowSize)
+{
+    
+}
+```
+
+- main：处理命令行选项
+
+```c++
+向main函数传递实参，常见情况是用户通过设置一组选项来确定函数所要执行的操作。例如，加入main函数位于可执行文件prog内，可以向程序传递下面的选项：
+prog -d -o ofile data0
+这些命令行选项通过两个（可选的）型参传递给main函数：
+int main(int argc, char *argv[])
+{
+}
+//等价于
+int main(int argc, char **argv)
+{
+}
+```
+
+- 含有可变型参的函数
+
+```c++
+initializer_list型参
+如果函数的实参数量未知，但是全部实参类型都相同，可以使用initializer_list类型性的性参。initializer_list是一种标库类型，用于表示某种特定类型的值的数组。initializer_list定义在同名头文件中。
+
+initializer_list<T> lst;				默认初始化；T类型元素的空列表
+initializer_list<T> lst{a, b, c...};	lst的元素数量和初始值一样多；lst的元素是对应初始值的副本；列表中的元素是const
+lst2(lst)								拷贝或赋值一个initializer_list对象不会拷贝列表中的元素；拷贝后，元列表和副本共享元素
+lst.size()								列表中的元素数量
+lst.begin()								返回指向lst中首元素的指针
+lst.end()								返回指向lst中尾元素下一位置的指针
+```
+
+```c++
+//和vector一样，initializer_list也是一种模板类型，定义时必须说明元素类型
+initializer_list<string> ls;
+initializer_list<int> li;
+//和vector不一样的是，initializer_list对象中的元素永远是常量值，我们不能改变initializer_list对象中的元素值。
+
+//使用如下形式编写输出错误信息的函数，使其可以作用域可变数量的实参：
+void error_msg(initializer_list<string> il)
+{
+    for (auto beg = il.begin(); beg != il.end(); ++beg)
+    {
+        cout << *beg << " ";
+    }
+    cout << endl;
+}
+
+//如果想像initializer_list型参中传递一个值序列，必须把序列放在一对花括号内
+//expected和actual是string对象
+if (expected != actual)
+{
+    error_msg({"functionX", expected, actual});
+}
+else
+{
+    error)msg({"functionX", "okay"});
+}
+
+//含有initializer_list型参的函数可能拥有其他型参。例如，调试系统可能有个名为ErrCode的类用来表示不同类型的错误。
+void error_msg(ErrCode e, initializer_list<string> il)
+{
+    cout << e.msg() << ": ";
+    for (const auto &elem : il)
+    {
+        cout << elem << " ";
+    }
+    cout << endl;
+}
+
+//上述代码调用
+if (expected != actual)
+{
+    error_msg(ErrCode(42), {"functionX", expected, actual});
+}
+else
+{
+    error_msg(ErrCode(0), {"fuctionX", "okay"});
+}
+```
+
+- 省略符型参（只能出现在型参列表的最后一个位置）
+
+```c++
+//两种形式
+void foo(parm_list, ...);
+void foo(...);
+```
+
+- 列表初始化的返回值
+
+```c++
+C++11规定，函数可以返回花括号包围的值的列表。此处列表也用来对表示函数返回的临时量进行初始化。如果列表为空，临时量执行值初始化；否则，返回的值由函数的返回类型决定
+    
+vector<string> process()
+{
+    //...
+    //expected和actual是string对象
+    if (expected.empty())
+    {
+        return {}; //返回空vector对象
+    }
+    else if (expected == actual)
+    {
+        return {"functionX", "okay"}; //返回列表初始化的vector对象
+    }
+    else
+    {
+        return {"functionX", expected, actual};
+    }
+}
+```
+
+- main返回值
+
+```c++
+返回0表示成功，其他值表示失败，非0的含义由机器而定。为使返回值与机器无关，cstdlib头文件定义了两个预处理变量，可以用这俩变量表示成功与失败
+int main()
+{
+    if (some_failure)
+    {
+        return EXIT_FAILURE; 
+    }
+    else
+    {
+        return EXIT_SUCCESS;
+    }
+}
+```
+
+- 返回数组指针
+
+```c++
+//数组不能拷贝，所以函数不能返回数组。不过，能返回数组的指针或引用。
+
+typedef int arrT[10]; //arrT是一个类型别名，它表示的类型是含有10个整形的数组
+
+using arrT = int[10]; //等价声明
+arrT *func(int i); //返回一个指向含有10个整数的数组的指针
+```
+
+```c++
+//返回数组指针的函数
+Type (*function(parameter_list))[dimension];
+//Type表示元素类型，dimension表示数组大小。
+int (*func(int i))[10];
+```
+
+- 使用尾置返回类型
+
+```c++
+//尾置返回类型跟在型参列表后面并以一个->符号开头。为了表示函数真正的返回类型跟在型参列表之后，我们在本应该放置返回类型的地方方一个auto
+auto func(int i) -> int(*)[10];
+```
+
+- 使用decltype
+
+```c++
+//如果我们知道函数返回的指针指向哪个数组，就可以使用decltype关键字声明返回类型。例如：
+int odd[] = {1, 3, 5, 7, 9};
+int even[] = {0, 2, 4, 6, 8};
+//返回一个指针，该指针指向含有5个整数的数组
+decltype(odd) *arrPtr(int i)
+{
+    return (i % 2) ? &odd : &even; //返回一个指向数组的指针
+}
+//decltype并不负责把数组类型转换成对应的指针，所以decltype的结果是个数组，要想表示arrPtr返回指针还必须在函数声明时加一个*符号。
+```
+
+- 函数重载：名字相同但型参列表不同
+
+```c++
+void print(const cahr *cp);
+void print(const int *beg, const int *end);
+void print(const int ia[], size_t size);
+
+int j[2] = {0, 1};
+print("Hello World"); // 调用print(const cahr *);
+print(j, end(j) - begin(j)); //调用print(const int *, size_t );
+print(begin(j), end(j)); //调用print(const int *, const int *);
+```
+
+不允许两个函数除了返回类型外其他所有要素都相同。
+
+- 重载和const型参
+
+```c++
+顶层const不影响传入函数的对象。一个拥有顶层const的型参无法和另一个没有顶层const的型参区分开来
+Record lookup(Phone);
+Record lookup(const Phone); //重复声明了Record lookup(Phone);
+
+Record lookup(Phone *);
+Record lookup(Phone * const); //重复声明了Record lookup(Phone *);
+```
+
+```c++
+如果型参是某种类型的指针或引用，则通过区分其指向的是常量对象还是非常量对象可以实现函数重载，此时的const是底层的。
+Record lookup(Account &);
+Record lookup(const Account &); //新函数，作用于常量
+
+Record lookup(Account *); //新函数，作用于指向Account的指针
+Record lookup(const Account *); //新函数，作用于指向常量的指针
+```
+
+- const_cast和重载
+
+```c++
+//如果实参是常量引用，就调用这个，返回一个常量引用
+const string &shorterString(const string &s1, const string &s2)
+{
+    return s1.size() <= s2.size() ? s1 : s2; //返回长度短的那个，不管实参是不是常量引用，都返回常量引用
+}
+//重载版本，如果实参是非常量引用，就调用这个，返回一个非常量引用
+string &shorterString(string &s1, string &s2)
+{
+    auto &r = shorterString(const_cast<const string&>(s1), const_cast<const string&>(s2));
+    return const_cast<string &>(r);
+}
+```
+
+- 默认实参
+
+```c++
+typedef string::size_type sz;
+string screen(sz ht = 24, sz = wid = 80, char backgrnd = ' ');
+//默认实参可以有多个，某个型参被赋予默认值，其后的型参都必须由默认值。
+
+//调用
+window = screen(); //等价于screen(24, 80, ' ');
+window = screen(66); //等价于screen(66, 80, ' ');
+window = screen(66, 256); //等价于screen(66, 256, ' ');
+window = screen(66, 256, '#'); //等价于screen(66, 256, '#');
+
+window = screen(, , '?'); //错误，只能省略尾部实参
+window = screen('?'); //调用screen('?', 80, ' '); '?'被隐式转为string::size_type类型，作为heitght的值传给函数。 '?'对应0x35，也就是十进制数63，所以将63传给了height。
+```
+
+- 默认型参声明：给定作用域中一个型参只能被赋予一次默认实参。即，函数后续声明中只能为没有默认值的型参添加默认实参，而且该实参右侧必须所有型参都有默认值。
+
+```c++
+//例如，表示高度和宽度的型参没有默认值
+string screen(sz, sz, char = ' ');
+//错误，不能修改已经存在的默认值
+string screen(sz, sz, char = '*');
+//正确，添加默认实参
+string screen(sz = 24, sz = 80, char);
+```
+
+- 默认实参的初始值
+
+```c++
+局部变量不能作为默认实参。除此之外，只要表达式的类型能转换成型参所需的类型，该表达式就能作为默认实参。
+//wd、def和ht的声明必须出现在函数之外
+sz wd = 80;
+char def = ' ';
+sz ht();
+string screen(sz = ht(), sz = wd, char = def);
+string window = screen(); //调用screen(ht(), 80, ' ');
+
+//用作默认实参的名字在函数声明所在的作用域内解析，而这些名字的求值过程发生在函数调用时：
+void f2()
+{
+    def = '*';
+    sz wd = 100; //该局部变量wd虽然屏蔽了全局变量wd，但是该局部变量和函数调用没有任何关系
+    window = screen(); //调用screen(ht(), 80, '*');
+}
+```
+
+- 内联函数和constexpr函数
+
+- 内联函数可避免函数调用的开销（调用前保存寄存器，并在返回时恢复；可能需要拷贝实参；程序转向一个新的位置继续执行）。
+
+```c++
+//将函数指定为内联函数，通常就是将它在每个调用点上“内联的”展开。假设我们把shorterString函数定义为内联函数，则如下调用
+cout << shorterString(s1, s2) << endl;
+//将在编译过程展开成类似下面的形式，从而消除了shorterString函数运行时开销
+cout << (s1.size() < s2.size() ? s1 : s2) << endl;
+
+//在shorterString函数的返回类型前面加上关键字inline，这样就可以将它声明成内联函数了：
+//内联版本：寻找两个string对象中较短的哪个
+inline const string &shorterString(const string &s1, const string &s2)
+{
+    return s1.size() <= s2.size() ? s1 : s2;
+}
+```
+
+- constexpr函数
+
+```c++
+//constexpr函数是指能用于常量表达式的函数。定义该类型函数时几项约定：函数的返回类型及所有型参类型都得是字面值类型，而且函数体中必须有且只有一条return语句
+constexpr int new_sz()
+{
+    return 42;
+}
+constexpr int foo = new_sz(); //正确：foo是一个常量表达式
+//把new_sz定义为无参数的constexpr函数。因为编译器能在编译时验证new_sz函数返回的是常量表达式，所以可以用new_sz函数初始化constexpr类型的变量foo。
+//执行初始化任务是，编译器把堆constexpr函数的调用替换成其结果值。为了能在编译过程中随时展开，constexpr函数被隐式地指定为内联函数。
+//constexpr函数体也可以包含其他语句，只要这些语句在运行时不执行任何操作就行。例如，空语句、类型别名以及using声明。
+//我们允许constexpr函数返回值并非一个常量
+//如果arg时常量表达式，则scale(arg)也是常量表达式
+constexpr size_t scale(size_t cnt)
+{
+    return new_sz() * cnt;
+}
+//当scale的实参时常量表达式时，它的返回值也是常量表达式，反之则不然
+int arr[scale[2]]; //正确，scale(2)是常量表达式
+int i = 2; //i不是常量表达式
+int a2[scale(i)]; //错误，scale(i)不是常量表达式
+```
+
+- 把内联函数和constexpr函数放在头文件内
+
+​		内链函数和constexpr函数和其他函数不同，它可以在程序中多次定义，但是多次定义必须完全一致。基于这个原因，内联函数和constexpr函数通常定义在头文件中。
+
+- 调试帮助
+- assert预处理宏。（定义在cassert头文件中）
+
+​		assert宏使用一个表达式作为它的条件：
+
+​		assert(expr);
+
+​		首先对expr求值，如果为假，assert输出信息并终止程序，如果为真，assert什么也不做
+
+```c++
+//assert宏常用于检查“不能发生”的条件。例如，一个堆输入文本进行操作的程序可能要求所有给定单词的长度都大于某个阈值。此时，程序可以包含一条如下所示的语句
+assert(word.size() > threshold);
+```
+
+- NDEBUG预处理变量
+
+​		assert的行为依赖于NDEBUG的预处理变量的状态。如果定义了NDEBUG，则assert什么也不做。默认状态没有定义NDEBUG，此时assert将执行运行时检查。
+
+```c++
+cc -D NDEBUG main.c # use /D with the Microsoft compiler
+//此命令等价于在main.c开头写#define NDEBUG
+```
+
+```c++
+//除了用assert外，也可以使用NDEBUG编写自己的条件调试代码。如果NDEBUG未定义，将执行#ifndef和endif之间的代码，如果定义了NDEBUG，这些代码将被忽略掉
+
+void print(const int ia[], size_t size)
+{
+    #ifndef NDEBUG
+    //__func__编译器定义的一个局部晶态变量，用于存放函数的名字
+    cerr << __func__ << ": array size is" << size << endl;
+    #endif
+    //...
+}
+//__func__是const char 的一个静态数组，存放函数的名字。
+//__FILE__存放文件名的字符串字面值
+//__LINE__存放当前行号的整形字面值
+//__TIME__存放文件编译时间的字符串字面值
+//__DATE__存放文件编译日期的字符串字面值
+
+//可以使用这些常量在错误消息中提供更多信息：
+if (word.size() < threshold)
+{
+    cerr << "Error: " << __FILE__ 
+        << " : in function " << __func__
+        << " at line " << __LINE__ << endl
+        << "		Compiled on " << __DATE__
+        << " at " << __TIME__ << endl
+        <<"		Word read was \"" <<word
+        <<"\":Length too short" << endl;
+}
+//如果程序提供一个长度小于threshold的string对象，将得到错误信息
+```
+
+- 重载函数的指针
+
+```c++
+void ff(int *);
+void ff(unsigned int);
+void (*pf1)(unsigned int) = ff;/pf1指向ff(unisigned);
+void (*pf2)(int) = ff; //错误，没有任何一个ff与该型参列表匹配
+double (*pf3)(int *) = ff; //错误，ff和pf3的返回值类型不匹配
+```
+
+- 函数指针性参
+
+```c++
+bool lengthCompare(const string &, const string &);
+
+void useBigger(const string &s1, const string &s2, 
+               bool pf(const string &, const string &));
+//等价声明：显式地将型参定义为指向函数的指针
+void useBigger(consg string &s1, const string &s2,
+               bool (*pf)(const string &, const string &));
+//我们可以把函数直接当成实参使用，会自动转换成指针
+
+//类型别名简化函数指针
+//Func和Func2是函数类型
+typedef bool Func(const string &, const string &);
+typedef decltype(lengthCompare) Func2; //等价类型
+
+//FuncP和FuncP2是指向函数的指针
+typedef bool (*Funcp)(const string &, const string &);
+typedef decltype(lengthCompare) *FuncP2; //等价类型
+
+//userBigger重新声明
+void userBigger(const string &, const string &, Func); //编译器自动将Func表示的函数类型转换成指针
+void userBigger(const string &, const string &, FuncP2); //等价
+```
+
+- 返回指向函数的指针
+
+```c++
+//使用类型别名
+using F = int(int *, int); //F是函数类型，不是指针
+Using PF = int(*)(int *, int); //PF是指针类型
+//和函数型参不一样，返回值类型不会自动地转换成指针
+PF f1(int); //正确，PF是指向函数的指针，f1返回指向函数的指针
+F f1(int); //错误，F是函数类型，f1不能返回一个函数
+F *f1(int); //正确，显式地指定返回类型是指向函数的指针
+
+//直接声明
+int (*f1(int))(int *, int);
+```
+
+- 使用auto和decltype用于函数指针类型
+
+```c++
+string::size_type sumLength(consg string &, const string &);
+string::size_type largeLength(consg string &, const string &);
+
+//getFcn函数返回指向sumLength或者largerLength的指针
+decltype(sumLength) *getFcn(const string &); //需要老及decltype作用于某个函数时，它返回函数类型而非指针类型，需要显式的加上*表明我们需要返回指针，而非函数本身。
+```
+
