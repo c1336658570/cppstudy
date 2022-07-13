@@ -1,6 +1,6 @@
 # c++ Pirmer
 
-## chap2
+## chap2变量和基本类型
 
 - 常量表达式：值不会改变且在编译过程就能得到计算结果的表达式
 - constexpr：将变量声明为constexpr类型以便由编译器来验证变量的值是否是一个常量表达式。声明为constexpr变量一定是一个常量，而且必须用常量表达式初始化。
@@ -60,7 +60,7 @@ decltype(i) e; //正确：e是一个（未初始化的int）
 注：decltype((variable))结果永远是引用，decltype(variable)结果只有当variable本身就是引用时才是引用
 ```
 
-### chap 3
+### chap 3字符串、向量和数组
 
 - 定义和初始化string对象
 
@@ -382,7 +382,7 @@ for (int_array *p = ia; p != ia + 3; ++p)
 }
 ```
 
-## chap 4
+## chap 4表达式
 
 - 赋值运算符
 
@@ -462,7 +462,7 @@ string str(pc);
 //可能导致异常的运行时行为。
 ```
 
-## chap5
+## chap5语句
 
 - 范围for语句
 
@@ -603,7 +603,7 @@ out_of_range				逻辑错误：使用一个超出有效范围的值
 
 其他异常恰好相反：应该使用string对象或C风格字符串初始化这些对象，但是不允许默认初始化的方式。
 
-## chap 6
+## chap 6函数
 
 - 数组型参
 
@@ -1116,7 +1116,7 @@ string::size_type largeLength(consg string &, const string &);
 decltype(sumLength) *getFcn(const string &); //需要老及decltype作用于某个函数时，它返回函数类型而非指针类型，需要显式的加上*表明我们需要返回指针，而非函数本身。
 ```
 
-## chap 7
+## chap 7类
 
 ```c++
 class Sales_data {
@@ -1678,7 +1678,7 @@ private:
 }
 ```
 
-# chap 8
+# chap 8IO库
 
 - IO类
 
@@ -1849,4 +1849,158 @@ out.close(); //关闭
 out.open("precious", ofstream::app); //输出和追加
 out.close();
 ```
+
+- string流，istringstream从string中读数据，ostringstream向string写入数据，stringstream即能读也能写。
+
+![2022-07-13 15-50-38 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 15-50-38 的屏幕截图.png)
+
+- 使用istream
+
+```c++
+//从电话簿中读取人名和电话
+struct PersonInfor{
+    string name; //姓名
+    vector<string> phones; //电话号码
+}
+string line, word; //保存来自输入的一行和单词
+vector<PersonInfo> people; //保存来自输入的所有记录
+//逐行从输入读取数据，直到cin遇到文件结尾（或其他错误）
+while (getline(is, line)) {       
+    PersonInfo info;            // 创建一个保存此记录数据的对象
+    istringstream record(line); // 将记录绑定到刚读入的行
+    record >> info.name;        // 读取名字
+    while (record >> word)      // 读取电话号码  当line中的数据读完，会触发文件结束信号。
+        info.phones.push_back(word);  // 保持它们
+    people.push_back(info); // 将此纪录追加到people末尾
+}
+```
+
+- 使用ostringstream，逐步构造输出，希望最后一起打印时，ostringstream很有用。
+
+```c++
+//验证电话号码有效，并将有效的代码输出一个新文件，无效号码不会输出到新文件中，只会打印人名和无效号码的错误信息。
+for (const auto &entry : people) {    //对people中每一项
+    ostringstream formatted, badNums; //每个循环步创建的对象
+    for (const auto &nums : entry.phones) {  //对每个数
+        if (!valid(nums)) {           
+            badNums << " " << nums;  //将数的字符串形式存入badNums
+        } else                        
+            // 将格式化的字符串“写入”formatted
+            formatted << " " << format(nums); 
+    }
+    if (badNums.str().empty())      //没有错误的数
+        os << entry.name << " "     //打印名字
+        << formatted.str() << endl; //和格式化的数
+    else                   //否则，打印名字和错误的数
+        cerr << "input error: " << entry.name 
+        << " invalid number(s) " << badNums.str() << endl;
+}
+//vaild和format，分别完成电话号码验证和改变格式的功能。我们使用标准的输出运算符（<<）向这些对象写入数据，但这些写入的数据实际上转为string操作，分别向formatted和badNums中的string对象添加字符。
+```
+
+## chap 9顺序容器
+
+![2022-07-13 16-27-45 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 16-27-45 的屏幕截图.png)
+
+- 如果程序只有在读取输入时需要在容器中间位置插入元素，随后需要随即访问元素，则：
+
+1. 首先，确定是否真的需要在容器中间位置添加元素。当处理数据时，通常可以很容易的向vector追加数据，然后调用标准库sort函数来重排容器元素，从而避免中间位置添加元素。
+2. 如果必须在中间位置添加元素，考虑输入阶段使用list，一旦输入完成，将list中的内容拷贝到一个vector中。
+
+![2022-07-13 16-37-25 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 16-37-25 的屏幕截图.png)
+
+![2022-07-13 16-38-06 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 16-38-06 的屏幕截图.png)
+
+- 容器定义和初始化
+
+![2022-07-13 16-46-05 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 16-46-05 的屏幕截图.png)
+
+- 将一个容器初始化为另一个容器的拷贝
+
+1. 拷贝整个容器，两个容器的类型及元素必须匹配
+2. 迭代器指定范围，不要求容器类型是相同的。而且，新容器和原容器中的元素类型也可以不同，只要能将要拷贝的元素转换为要初始化的容器的元素类型即可。
+
+```c++
+list<string> authors = {"milton", "Shakespeare", "Austen"};
+vector<const char *>articles = {"a", "an", "the"};
+
+list <string> list2(authors); //正确，类型匹配
+deque<string> authList(authors); //错误，容器类型不匹配
+vector<string> words(articles); //错误，容器类型必须匹配
+//正确可以将const char *元素转换为string
+forward_list<string> words(articles.begin(), articles.end());
+```
+
+- 与顺序容器大小相关的构造函数
+
+```c++
+vector<int> ivec(10m -1); //10个元素，初始化为-1
+list<string> svec(10, "hi!"); //10个strings；每个都初始化位"hi!"
+forward_list<int> ivec(10); //10个元素，每个都初始化位0
+deque<int> svec(10); //10个元素，默认初始化为0
+
+注：只有顺序容器的构造函数才接收大小参数，关联容器并不支持。
+```
+
+- 标准库array具有固定大小
+
+```c++
+与内置数组一样，标准库array的大小也是类型的一部分。当定义一个array时，除指定类型外，还要指定容器大小
+array<int, 42>; //类型为保存42个int的数组
+array<string, 10>; //类型为保存10个string的数组
+为了使用array类型，我们必须同时指定元素类型恶化大小
+array<int, 10>::size_type i; //数组类型包括元素类型和大小
+array<int>::size_type j; //错误，array<int>不是一个类型
+
+array是非空的，每个元素都会被默认初始化。如果列表初始化，列表元素个数要小于等于array的大小。初始化靠前的元素，所有剩余的都会被默认初始化。
+array<int, 10> ia1; //10个默认初始化int
+array<int, 10> ia2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}; //列表初始化
+array<int, 10> ia3 = {42}; //ia3[0]位42，剩余元素为0
+
+我们不能对内置数据类型拷贝或对象赋值操作，但array无此限制
+int digs[10] = {0, 1, 2, 3, 4, 5, 6, 7 ,8 ,9};
+int cpy[10] = digs; //错误，内置类型不支持拷贝或赋值
+array<int, 10> digits = {0, 1, 2, 3, 4 ,5 ,6 ,7 ,8 ,9};
+array<int, 10> copy = digits; //正确只要数组类型匹配即合法  大小和类型都必须相同
+```
+
+- 赋值和swap
+
+```c++
+c1 = c2; //c1的内容替换为c2
+c1 = {a, b, c}; //赋值后c1的大小为3
+//不管左边容器是否和右边容器大小是否想等，第一次赋值，左边容器都与右边容器大小相等。
+
+//标准库array类型允许赋值，但是两边运算对象必须有相同的类型
+array<int, 10> a1 = {0, 1, 2, 3, 4 ,5 ,6 ,7 ,8 ,9};
+array<int, 10> a2 = {0};
+a1 = a2; //替换a1的元素
+a2 = {0}; //错误，不能将一个花括号列表赋予数组
+//由于右边运算对象可能和左边运算对象大小不同，因此array类型不支持assign，也不允许花括号包围的值列表进行赋值。
+```
+
+![2022-07-13 18-54-18 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 18-54-18 的屏幕截图.png)
+
+- 使用assign（仅顺序容器）
+
+```c++
+list<string> name;
+vector<const char*> oldstyle;
+names = oldstyle; //错误，容器类型不匹配
+names.assign(oldstyle.cbegin(), oldstyle.cend()); //正确
+注：由于旧元素被替换，因此传递给assign的迭代器不能指向调用assign的容器。
+    
+//等价于slist1.clear();
+//后跟slist1.insert(slist1.begin(), 10, "hiya!");
+list<string> slist1(1); //1个元素，为空string
+slist1.assign(10, "Hiya!"); //10个元素，每个都是"Hiya!"
+```
+
+
+
+
+
+
+
+
 
