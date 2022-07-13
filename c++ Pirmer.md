@@ -1116,3 +1116,737 @@ string::size_type largeLength(consg string &, const string &);
 decltype(sumLength) *getFcn(const string &); //需要老及decltype作用于某个函数时，它返回函数类型而非指针类型，需要显式的加上*表明我们需要返回指针，而非函数本身。
 ```
 
+## chap 7
+
+```c++
+class Sales_data {
+friend Sales_data add(const Sales_data&, const Sales_data&);
+friend std::ostream &print(std::ostream&, const Sales_data&);
+friend std::istream &read(std::istream&, Sales_data&);
+public:
+	// constructors
+	Sales_data() = default;
+	Sales_data(const std::string &s): bookNo(s) { }
+	Sales_data(const std::string &s, unsigned n, double p):
+	           bookNo(s), units_sold(n), revenue(p*n) { }
+	Sales_data(std::istream &);
+
+	// operations on Sales_data objects
+	std::string isbn() const { return bookNo; }
+	Sales_data& combine(const Sales_data&);
+	double avg_price() const;
+private:
+	std::string bookNo;
+	unsigned units_sold = 0;
+	double revenue = 0.0;
+};
+
+```
+
+
+
+- 引入this
+
+```c++
+this指针是隐式定义的，this是一个常量指针(T *const this)，不能改变this保存的地址，this永远指向对象本身
+```
+
+- 引入const成员函数
+
+```c++
+在成员函数参数列表之后，紧跟在参数列表后的const表示this是一个指向常量的指针。这样使用const的成员函数被称作常量成员函数。
+const T *const this;
+```
+
+- 在类外定义成员函数
+
+```c++
+类外定义成员函数，必须与它的声明匹配（返回类型、参数列表、函数名、const属性）。例如：
+double Sales_data::avg_price() const
+{
+    if (uhnits_sokd)
+    {
+        return revenue/units_sold;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+//Sales_data::avg_price使用作用域运算符，说明我们定义了一个名为avg_pricec的函数，并且该类被声明在类Sales_data的作用域内。
+```
+
+- 定义一个返回this对象的函数
+
+```c++
+函数combine的设计初中类似于复合运算符+=，调用该函数的对象代表的是赋值运算符左侧的运算对象，右侧运算对象通过显式的实参被传入函数：
+Sales_data & Sales_data::combine(const Sales_data &rhs)
+{
+    units_sold += rhs.units_sold; //把rhs的成员加到this对象的成员上
+    revenue += rhs.revenue;
+    return *this; //返回调用该函数的对象
+}
+
+//调用
+total.combine(trans);
+```
+
+- 定义类相关的非成员函数
+
+```c++
+//定义read和print
+
+istream &read(istream &is, Sales_data &item)
+{
+    double price = 0;
+    is >> item.bookNo >> item.units_sold >> price;
+    item.revenue = price * item.units_sold;
+    return is;
+}
+ostream &print(ostream &os, const Sales_data &item)
+{
+    os << item.isbn() << " " << item.units_sold << " "
+        << item.revenue << " " << item.avg_price();
+    return os;
+}
+//IO类不能被拷贝，只能通过引用来传递它们
+```
+
+- 定义add函数
+
+```c++
+Sales_data add(const Sales_data &lhs, const Sales_data &rhs)
+{
+    Sales_data sum = lhs; //拷贝构造
+    sum.combine(rhs);
+    return sum;
+}
+```
+
+- 构造函数：构造函数不能被声明为const的，当我们创建类的一个const对象时，直到构造函数完成初始化过程，对象才能真正取得其“常量”属性。因此构造函数在const对象的构造过程中可以向其写值。
+
+- 合成的默认构造函数
+
+```c++
+我们的类没有显式的定义构造函数，那么编译器就会为我们隐式地定义一个默认构造函数。
+编译器创建的构造函数又被称为合成默认构造函数。
+合成默认构造按照如下规则初始化类内成员：
+如果存在类内的初始值，用它来初始化成员
+否则，默认初始化该成员
+```
+
+- 某些类不能依赖于合成的默认构造函数
+
+```c++
+合成默认构造函数只适合非常间的的类。
+三种必须定义自己默认构造函数的原因：
+编译器只有在发现类不包含任何构造函数的情况下才会替我们生成一个默认构造函数。一旦定义了一些其他的构造函数，除非我们再定义一个默认的构造函数，否则此类没有默认构造函数。
+对某些类来说，合成默认构造函数可能执行错误的操作。如果定义在块中的内置数据类型或复合类型（数组或指针）的对象被默认初始化，则它们的值是为定义的。
+有时候编译器不能为某些类合成默认构造函数。例如，如果类中包含一个其他类类型的成员且这个类型成员没有默认构造函数，那么编译器将无法初始化该成员。
+```
+
+- 定义Sales_data的构造函数
+
+```c++
+一个istream&，从中读取一条交易信息。
+一个const string &，表示ISBN编号；一个unsigned，表示售出的图书数量；以及一个double，表示图书的售出价格。
+一个const string &，表示ISBN编号；编译器将赋予其它成员默认值。
+一个空参数列表（即默认构造函数）。
+struct Sales_data 
+{
+	Sales_data() = default;
+	Sales_data(const std::string &s): bookNo(s) { }
+	Sales_data(const std::string &s, unsigned n, double p):
+	           bookNo(s), units_sold(n), revenue(p*n) { }
+	Sales_data(std::istream &);
+	std::string isbn() const { return bookNo; }
+	Sales_data& combine(const Sales_data&);
+	double avg_price() const;
+	std::string bookNo;
+	unsigned units_sold = 0;
+	double revenue = 0.0;
+};
+```
+
+```c++
+=defalut的含义
+Sales_data() = default;
+我们需要编译器生成一个默认构造函数，可以通过在参数列表后面写上=default来要求编译器生成默认构造函数。
+=defalut既可以和声明一起出现在类的内部，也可以作为出现在类的外部。和其他函数一样，如果=defalut在类的内部，则默认是内联的；如果出现在类的外部，则默认是不内联的。
+```
+
+- 构造函数初始值列表
+
+```c++
+Sales_data(const std::string &s) : bookNo(s){ }
+Sales_data(const std::string &s, unsigned n, double p) : bookNo(s), units_sold(n), revenue(p *n){ }
+
+//只有1个string类型参数的构造函数使用string对象初始化bookNo，对于units_sold和revenue则没有显式初始化，它将以合成默认构造函数相同的方式隐式初始化。
+Sales_data(const std::string &s) : bookNo(s), units_sold(s), revenue(0){ }
+```
+
+- 在类的外部定义构造函数
+
+```c++
+Sales_data::Sales_dat(std::istream &is)
+{
+    read(is, *this); //read作用是从is读取一条交易信息后，存入this对象中
+}
+```
+
+- Screen类的成员函数（在类内编写的成员函数默认是内联的，在类外默认不是）
+
+```c++
+class Screen
+{
+public:
+    typedef std::string::size_type pos;
+    Screen() = default; // needed because Screen has another constructor
+                        // cursor initialized to 0 by its in-class initializer
+    Screen(pos ht, pos wd, char c) : height(ht), width(wd),
+                                     contents(ht * wd, c) {}
+    friend class Window_mgr;
+    Screen(pos ht = 0, pos wd = 0) : cursor(0), height(ht), width(wd), contents(ht * wd, ' ') {}
+    char get() const // get the character at the cursor
+    {
+        return contents[cursor];
+    }                                      // 隐式内联
+    inline char get(pos ht, pos wd) const; // 显式内联
+    Screen &clear(char = bkground);
+
+private:
+    static const char bkground = ' ';
+
+public:
+    Screen &move(pos r, pos c); // can be made inline later
+    Screen &set(char);
+    Screen &set(pos, pos, char);
+    // display overloaded on whether the object is const or not
+    Screen &display(std::ostream &os)
+    {
+        do_display(os);
+        return *this;
+    }
+    const Screen &display(std::ostream &os) const
+    {
+        do_display(os);
+        return *this;
+    }
+
+private:
+    // function to do the work of displaying a Screen
+    void do_display(std::ostream &os) const { os << contents; }
+    pos cursor = 0;            //光标位置
+    pos height = 0, width = 0; //屏幕的宽和高
+    std::string contents;
+};
+```
+
+- 令成员函数作内联函数：在类内声明时可以写上Inline关键字，声明成员内联函数，也可以在类外实现时加上关键字inline，使其成为内联函数，二者只有一个也是正确的
+
+```c++
+inline Screen &Screen::move(pos r, pos c)
+{
+    pos row = r * width; // compute the row location
+    cursor = row + c;    // move cursor to the column within that row
+    return *this;        // return this object as an lvalue
+}
+char Screen::get(pos r, pos c) const // declared as inline in the class
+{
+    pos row = r * width;      // compute row location
+    return contents[row + c]; // return character at the given column
+}
+```
+
+- 可变数据成员：希望在成员函数内修改类的某个数据成员，即使时一个const成员函数内。可以通过在变量声明时加入mutable关键字做到这一点
+
+​		一个可变数据成员永远不是const，即使它是const对象的成员。
+
+- 基于const指针的重载
+
+```c++
+class Screen
+{
+public:
+    Screen &display(std::ostream &os)
+    {
+        do_display(os);
+        return *this;
+    }
+    const Screen &display(std::ostream &os) const 
+    {
+        do_display(os);
+        return *this;
+    }
+private:
+   
+    void do_display(std::ostream &os) const 
+    {
+        os << contents; 
+    }
+}
+
+//当调用do_display时，它的this指针将隐式的传递给do_display。当display的非常量版本调用do_display时，它的this指针将隐式的从指向非常量的指针，转为指向常量的指针。
+```
+
+- 友元再探：普通函数、其他类和其他类内的成员函数都可以定义成友元。友元关系不存在传递性（一个类有自己的友元，但是该类又是另一个类的友元，该类中的友元不能访问另一个类）。
+
+- 成员函数做友元
+
+1. 首先定义A类，其中声明函数1，但是不能定义它。在函数1中使用B类的成员之前必须先声明B类。
+2. 接下来定义B类，包括对于函数1的友元声明。
+3. 最后定义函数1，此时它才可以使用B类中的成员
+
+- 友元声明和作用域
+
+​		类和非成员函数的声明不是必须在它们的友元之前。
+
+```c++
+struct X{
+    friend void f() {/*友元函数可以定义在类的内部*/}
+    X(){f();} //错误，f还没有被声明
+    void g();
+    void h();
+}
+void X::g() { return f(); } //错误，f还没有被声明
+void f(); //声明定义在X中的函数
+void X::h() { return f(); } //正确
+```
+
+- 构造函数初始值有时必不可少
+
+```c++
+class ConstRef{
+public:
+    ConstRef(int ii);
+private:
+    int i;
+    const int ci;
+    int &ri;
+};
+
+ConstRef::ConstRef(int il)
+{
+    i = ii; //正确
+    ci = ii; //错误
+    ri = i; //错误
+}
+//构造函数开始执行，初始化已经完毕
+
+//正确
+ConstRef::ConstRef(int il) : i(ii), ci(ii), ri(i)
+{}
+```
+
+- 成员初始化的顺序：构造函数初始值列表值说明用于初始化成员的值，而不限定初始化成员的具体执行顺序。初始化顺序与它们在类中定义出现的顺序一致。
+
+- 委托构造函数，使用它所属类的其他构造函数执行它自己的初始化过程
+
+```c++
+class Sales_data{
+public:
+    //非委托构造函数使用对应的实参初始化成员
+    Sales_data(std::string s, unsigned cnt, double price) : 
+    		bookNo(s), units_sold(cnt), revenue(cnt *price){}
+    //其余构造函数全部委托给另一个构造函数
+    Sales_data() : Sales_dat("", 0, 0){}
+    Sales_data(std::string s) : Sales_data(s, 0, 0){}
+    Sales_data(std::istream &is) : Sales_dat()
+    {
+        read(is, *this);
+    }
+}
+
+//先执行受委托的构造函数的初始值列表和函数体，再执行委托者的函数体。
+```
+
+- 隐式的类类型转换
+
+1. 只允许一步类类型转换
+
+```c++
+class Sales_data {
+public:
+	// constructors
+	Sales_data() = default;
+	Sales_data(const std::string &s, unsigned n, double p):
+	           bookNo(s), units_sold(n), revenue(p*n) { }
+    Sales_data(const std::string &s): bookNo(s) { }
+	Sales_data(std::istream &);
+};
+string null_book = "9-999-99999-9";
+//构造一个临时的Sales_data对象
+//该对象的units_sold和revenue等于0，bookNo等于null_book
+item.combin(null_book);
+item.combin("9-999-99999-9"); //错误，需要两部转换，char *->string->Sales_sold
+item.combin(string("9-999-99999-9")); //正确
+item.combin(Sales_data("9-999-99999-9")); //正确
+
+item.combin(cin); //正确
+隐式的将cin转换成了Sales_data类型，这个转换接受一个istream的Sales_data构造函数。通过读标准输入创建了一个临时的Sales_data对象，并将得到的对象传递给combine。
+```
+
+
+
+2. 类类型转换不是总有效
+
+- 抑制构造函数定义的隐式类型转换
+
+​		在要求隐式转换的程序上下文中，我们可以通过将构造函数声明为explicit加以阻止：
+
+```c++
+class Sales_data {
+public:
+	// constructors
+	Sales_data() = default;
+	Sales_data(const std::string &s, unsigned n, double p):
+	           bookNo(s), units_sold(n), revenue(p*n) { }
+    explicit Sales_data(const std::string &s): bookNo(s) { }
+	explicit Sales_data(std::istream &);
+};
+item.combin(null_book);// 错误，string构造函数是explicit的
+item.combin(cin); //错误，istream构造函数是explicit的
+//关键字explicit只对一个实参的构造函数有效。
+//只能在类内声明构造函数时使用explicit关键字，类外定义不应该重复声明
+explicit Sales_data(std::istream &) //错误，explicit只能出现在类内声明处
+{
+    read(is, *this);
+}
+```
+
+- explicit构造函数只能用于直接初始化
+
+```c++
+Sales_data item1(null_book); //正确，直接初始化
+Sales_data item2 = null_book; //错误，不能拷贝初始化
+```
+
+- 为转换显式的使用构造函数
+
+```c++
+item.combine(Sales_dat(null_book)); //正确
+item.combine(static_cast<Sales_data>(cin));z //正确
+```
+
+- 聚合类使得用户可以直接访问其成员，条件如下：
+
+1. 所有成员都是public的
+2. 没有定义任何构造函数
+3. 没有类内初始值
+4. 没有基类，也没有virtual函数
+
+```c++
+//例如
+struct Data{
+    int ival;
+    string s;
+}
+//可以提供一个花括号括起来的成员初始值列表，初始化聚合类的数据成员
+//val1.ival = 0; val1.s = string("Anna");
+Data val1 = {0, "Anna"};
+//初始值顺序必须与声明一致。
+//初始值列表中的元素少于类成员数量，则靠后成员被值初始化。初始列表中的元素个数决不能超过类的成员数量。
+```
+
+- 字面值常量类，和普通类不同，字面值类型的类可能含有constexpr函数成员。这样的成员必须符合constexpr函数的所有要求，它们是隐式const的。
+
+​		数据成员都是字面值类型的聚合类是字面值常量类。如果不是聚合类符合如下要求，则它也是字面值常量类：
+
+1. 数据成员都必须是字面值类型
+2. 类必须至少包含一个constexpr构造函数
+3. 如果一个数据成员含有类内初始值，则内置类型成员的初始值必须是一条常量表达式；或者如果成员属于某种类类型，则初始值必须使用成员自己的constexpr构造函数。
+4. 类必须使用析构函数的默认定义，该成员负责销毁类的对象。
+
+- constexpr构造函数
+
+```c++
+//构造函数不能是const的，但字面值常量类的构造函数可以是constexpr函数。
+//constexpr构造函数可以声明成=default的形式。否则，constexpr构造函数就必须即符合构造函数要求(不能包含返回语句)，又符合constexpr函数的要求（拥有唯一可执行语句就是返回语句）。综合者两点可知，constexpr构造函数体一般是空的。通过前置关键字constexpr就可以声明一个constexpr构造函数了
+class Debug
+{
+public:
+	constexpr Debug(bool b = true) : hw(b), io(b), other(b) {}
+	constexpr Debug(bool h, bool i, bool o) : hw(h), io(i), other(o) {}
+	constexpr bool any() { return hw || io || other; }
+	void set_io(bool b) { io = b; }
+	void set_hw(bool b) { hw = b; }
+	void set_other(bool b) { hw = b; }
+
+private:
+	bool hw;	// hardware errors other than IO errors
+	bool io;	// IO errors
+	bool other; // other errors
+};
+//constexpr构造函数必须初始化所有数据成员，初始值或者使用constexpr构造函数，或是一条常量表达式。
+//constexpr构造函数用于生成constexpr对象以及constexpr函数的参数或返回类型：
+constexpr Debug io_sub(false, true, ture); //调试IO
+if (io_sub.any()) //等价于if(true)
+    cerr << "print appropriate error messages" << endl;
+constexpr Debug prod(false); //无调试
+if (prod.any()) //等价于if(false)
+    cerr << "print an error messages" << endl;
+```
+
+- 类的静态成员
+
+​		类的静态成员存在于任何对象之外，对象中不包含任何与静态成员有关的数据。
+
+```c++
+class Account {
+public:
+    void calculate() { amount += amount * interestRate; }
+    static double rate() { return interestRate; }
+    static void rate(double);   
+private:
+    std::string owner; 
+    double amount;
+    static double interestRate; 
+    static double initRate() { }
+};
+```
+
+
+
+​		静态成员函数也不与任何对象绑定在一起，它们不包含this指针。作为结果，静态成员函数不能声明成const的，而且我们也不能再static函数体内使用this指针。这一限制既适用于this的显示调用，也对调用非静态成员的隐式调用有效。
+
+- 使用类的静态成员
+
+```c++
+//使用作用域运算符访问静态成员
+double r;
+r = Account::rate(); 
+//使用类的对象、引用或指针访问
+Account ac1;
+Account *ac2 = &ac1;
+r = ac1.rate();
+r = ac2->rate();
+
+//成员函数不用通过作用域运算符就能直接使用静态成员
+class Account {
+public:
+    void calculate() { amount += amount * interestRate; } 
+private:
+    static double interestRate; 
+};
+```
+
+- 定义静态成员（静态成员函数可以在类内定义，也可以在类外定义，类外定义时，不能重复static关键字，类内声明出现一次就可以）
+
+​		静态数据成员不属于任何一个对象，所以它们并不是创建类对象时被定义的。意味着它们不是由类的构造函数初始化的。一般来说，我们不能在类的内部初始化静态成员。相反的，必须在类的外部定义和初始化静态成员。
+
+​		类似全局变量，静态数据成员定义在任何函数之外。一旦定义，存在于程序整个声明周期。
+
+```c++
+//定义和初始化一个静态成员
+double Account::interestRate = initRate();
+//从类名开始，这条语句剩余部分就位于类的作用域之内了。因此可以直接使用initRate()函数。
+```
+
+- 静态成员的类内初始化，可以为静态成员提供const整数类型的类内初始值，要求静态成员必须是字面值常量类型的constexpr。初始值必须是常量表达式。
+
+```c++
+class Account {
+public:
+    static double rate() { return interestRate; }
+    static void rate(double);   
+private:
+    static constexpr int period = 30; 
+    double daily_tbl[period];
+};
+```
+
+- 静态成员能用于某些场景，而普通成员不能
+
+```c++
+//静态成员可以是不完全类型，特别的，静态数据乘员类型可以就是它所属的类型。而非静态数据成员则受到限制，只能声明引用或指针
+class Bar{
+public:
+    //...
+private:
+    static Bar mem1; //正确
+    Bar *mem2; //正确
+    Bar mem3; //错误
+}
+//我们可以使用静态成员作为默认实参，而非静态成员不行，因为他的值本身属于对象的一部分，这么做会导致无法真正提供一个对象以便从中获取成员的值，最重将导致错误。
+class Screen{
+public:
+    //bkground表示一个在类中稍后定义的静态成员
+    screen& clear(char = bkground);
+private:
+    static const char bkground;
+}
+```
+
+# chap 8
+
+- IO类
+
+```c++
+iostream 		istream，wistream
+    			ostream，wostream
+    			iostream，wiostream
+fstream			ifstream，wifstream
+    			ofstream，wofstream
+    			fstream，wfstream
+sstream 		istringstream，wistringstream
+    			ostringstream，wostringstream
+    			stringstream，wstringstream
+//wcin、wcout和wcerr对应cin、cout和cerr的宽字符版本。
+```
+
+- IO对象无拷贝或赋值
+
+```c++
+ofstream out1, out2;
+out1 = out2; //错误
+ofstream print(ofstream); //错误
+out2 = print(out2); //错误
+```
+
+- 条件状态
+
+![2022-07-13 14-50-22 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 14-50-22 的屏幕截图.png)
+
+- 管理条件状态
+
+```c++
+//记住cin的当前状态
+auto old_state = cin.rdstate(); //记住cin的当强状态
+cin.clear(); //使cin有效
+process_input(cin); //使用cin
+cin.setstate(old_state); //将cin置为原有状态
+
+//下面代码将failbit和badbit复位，但保持eofbit不便
+cin.clear(cin.rdstate() & ~cin.failbit & ~cin.badbit)
+```
+
+- 管理输出缓冲
+
+```c++
+在每个输出操作后，可以用操纵父unibuf设置流的内部状态，来清空缓冲区。默认情况下，cerr是设置unitbuf的，因此写到cerr的内容都是立即刷新。
+一个输出流可能被关联到另一个流。当读写都被关联的流时，关联到的流缓冲区会被刷新。默认情况，cin和cerr都关联到cout。因此，读cin或写cerr都会导致cout的缓冲区刷新
+```
+
+- 刷新输出缓冲区：flush、ends和endl
+
+```c++
+cout << "hi!" << endl; //输出hi！和换行，然后刷新缓冲区
+cout << "hi!" << flush; //输出hi!，然后刷新缓冲区
+cout << "hi!" << ends; //输出hi和一个空字符，然后刷新缓冲区
+```
+
+- unibuf操纵符：使用unibuf操纵符，告诉流每次写操作后都进行一次flush操作。nounitbuf操作符则重置流，使其恢复使用正常的系统管理的缓冲区刷新机制
+
+```c++
+cout << unitbuf; //所有输出操作都会立即刷新缓冲区
+cout << nounitbuf; //回到正常的缓冲方式
+//注：如果程序崩溃，输出缓冲区不会被刷新。
+```
+
+- 关联输入和输出流：当一个输入流被关联到一个输出流时，任何试图从输入流读取数据的操作都会先刷新关联的输出流。标准库将cout和cin关联在一起。
+
+```c++
+cin >> ival; //导致cout的缓冲区被刷新
+```
+
+```c++
+//tie有两个版本。一个不带参数，返回指向输出流的指针。如果本对象关联到一个输出流，则返回的就是指向这个流的指针，如果对象未关联到流，则返回空指针。tie第二个版本接收一个ostream的指针，将自己关联到此ostream。即x.tie(&o)将流x关联到输出流G
+
+cin.tie(&cout); //仅仅用来展示：标库将cin和cout关联在一起
+//old_tie指向当前关联到cin的流（如果有的话）
+ostream *old_tie = cin.tie(nullptr); //cin不再于其他流关联
+cin.tie(&cerr); //将cin与cerr关联，读取cin会刷新cerr
+cin.tie(&old_tie); //重建cin与cout间的正常关联
+```
+
+- 文件输入输出：ifstream从一个给定文件读取数据，ofstream向一个给定文件写入数据，fstream可以读写给定文件。
+
+![2022-07-13 15-18-23 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 15-18-23 的屏幕截图.png)
+
+- 使用文件流对象
+
+```c++
+ifstream in(ifile); //构造一个ifstream并打开给定文件
+ofstream out; //输出文件流并未关联到任何文件
+```
+
+- 用fstream代替iostream&：fstream是从iostream继承过来的，接收iostream类型的引用（或指针）参数的函数可以用对应的fstream（或sstream）类型调用。
+
+```c++
+ifstream input(argv[1]); //打开销售记录文件
+ofstream output(argv[2]); //打开输出文件
+Sales_data total; //保存销售总额的变量
+if (read（input, total)) //读取第一条销售记录
+{
+    Sales_data trans; //保存下一条销售记录的变量
+    while (read(input, trans)) //读取剩余记录
+    {
+        if (total.isbn() == trans.isbn())
+        {
+            total.combine(trans); //更新销售总额
+        }
+        else
+        {
+            print(output, total) << endl; //打印结果
+            total = trans; //处理下一本书
+        }
+    }
+    print(output, total) << endl; //打印最后一本书的销售额
+}
+else //文件中无输入数据
+{
+    cerr << "No data?!" << endl;
+}
+//read和print型参虽然是istream&和ostream&，但我们可以传递fstream对象
+```
+
+- 成员函数open和close
+
+```c++
+ifstream in(ifile); //构筑一个ifstream并打开给定文件
+ofstream out; //输出文件流未与任何文件相关联
+out.open(iflie + ".copy"); //打开指定文件
+//如果open失败，failbit会被置位。
+if (out); //检查open是否成功。open成功，可以使用文件了。
+//对一个已打开的文件调用oepn会失败，并会导致failbit被置位。随后试图使用文件流的操作都会失败。为了将文件流关联另一文件，需要先关闭已关联的文件
+in.close(); //关闭文件
+in.open(ifile + "2"); //打开另一个文件。
+//open成功，会使good()为true
+```
+
+- 文件模式
+
+![2022-07-13 15-35-59 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 15-35-59 的屏幕截图.png)
+
+1. ifstream或fstream只能in
+2. ofstream或fstream只能out
+3. 只有当out被设定时才可以设定trunc
+4. 只要trunc没被设定，就可以设定app模式。app模式下，没有显式指定out，文件也总以输出方式打开
+5. 默认情况下，即使没设定trunc，以out打开也会截断文件。若要保留out模式打开文件的内容，必须同时指定app，只能在文件尾部添加内容；或者同时指定in模式，即打开文件同时进行读写操作。
+6. ate和binary模式可用于任何类型的文件流对象，且可以与其他任何文件模式组合使用
+
+​		每个文件流都有默认模式，ifstream默认in，ofstream默认out，fstream默认in和out
+
+- 以out模式打开文件会丢弃已有数据
+
+```c++
+//file1被截断
+ofstream out("file1"); //隐含输出加截断
+ofstream out2("file1", ofstream::out); //隐含的截断文件
+ofstream out3("file1", ofstream::out | ofstream::trunc);
+//保留文件内容，显式指定app模式
+ofstream app("file2", ofstream::app); //隐含为输出模式
+ofstream app2("file2", ofstream::out | ofstream::app);
+```
+
+- 每次调用open时都会确定文件模式
+
+```c++
+ofstream out;
+out.open("scratchpad"); //隐含输出和截断
+out.close(); //关闭
+out.open("precious", ofstream::app); //输出和追加
+out.close();
+```
+
