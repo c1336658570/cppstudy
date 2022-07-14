@@ -1996,11 +1996,397 @@ list<string> slist1(1); //1个元素，为空string
 slist1.assign(10, "Hiya!"); //10个元素，每个都是"Hiya!"
 ```
 
+- 使用swap，swap交换两个相同容器的内容
 
+```c++
+vector<string> svec1(10); //10个元素的vector
+vector<string> svec2(24); //24个元素的vector
+swap(sevc1, sevc2); //元素本身并为交换，swap值是交换了两个容器的内部数据结构
+//swap会导致迭代器、引用和指针失效
 
+//与其他容器不同swap两个array会真正交换它们的元素，因此交换时间与array中的元素成正比。因此，对于array来说，swap操作后，指针、引用和迭代器所绑定的元素保持不便，但元素值已经与另一个array中对应元素的值进行了交换
+```
 
+- 关系运算符（== != < <= > >=）
 
+```c++
+//可以比较两个容器，但容器类型必须一致（vector<int>与另一个vector<int>），比较两个容器本质是比容器的元素逐对比较。
+```
 
+```c++
+//某些自定义类型的容器不能比较
+vector<Sales_data> storeA, storeB;
+if (storeA < storeB) //错误，Sales_data没有<运算符
+```
+
+- 向顺序容器添加元素，顺序容器添加元素的操作（非array）
+
+![2022-07-13 19-14-38 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 19-14-38 的屏幕截图.png)
+
+- 在容器特定位置添加元素
+
+```c++
+//insert接收第一个参数为迭代器，第二个参数为插入内容，在迭代器所指元素之前插入新元素
+slist.insert(iter, "Hello!"); //将"Hello!"添加到iter之前的位置。
+
+//某些容器不支持push_front操作，但是对insert无类似限制
+vector<string> svec;
+list<string> slist;
+
+//等价于调用slist.push_front("Hello!");
+slist.insert(slist.begin(), "Hello!");
+
+//vector不支持push_front，但是可以插入到begin()之前
+```
+
+- 插入范围内元素
+
+```c++
+//第一个参数为迭代器，第二个是元素个数，第三个为元素
+svec.insert(svec.end(), 10, "Anna");
+
+//接受一对迭代器或一个初始化列表的insert版本将给定范围元素插入到指定位置之前
+vector<string> v = {"quasi", "simba", "frollo", "scar"};
+//将v的最后两个元素添加到slist的开始位置
+slist.insert(slist.begin(), v.end - 2, v.end());
+slist.insert(slist.end(), {"these", "words", "will", "go", "at"m "the", "end"});
+//运行时错误，迭代器表示要拷贝的范围，不能指向与目的位置相同的容器
+slist.insert(slist.begin(), slist.begin(), slist.end());
+//接收元素个数或范围的insert返回指向第一个新加入元素的迭代器。如果范围为空，不插入任何元素，insert会将第一个参数返回。
+```
+
+- 使用insert的返回值，通过使用insert返回值可以在特定位置反复插入元素
+
+```c++
+list<string> lst;
+auto iter = lst.begin();
+while (cin >> word)
+{
+    iter = lst.insert(iter, word); //等价于push_front
+}
+```
+
+- 使用emplace操作
+
+​		emplace_front、emplace和emplace_back，这些操作构造而不是拷贝元素。这些操作分别对应push_front、insert和push_back，允许我们将元素放置在容器头部、一个指定位置之前或容器尾部。
+
+​		调用push或insert，是将对象传递过去，然后将对象拷贝到容器。调用emplace成员函数时，则是将参数传递给元素类型的构造函数。emplace成员使用这些参数在容器管理的内存空间中直接构造元素。
+
+- 访问元素，所有顺序容器都有front成员函数返回首元素的引用，除了forward_list外所有元素都有back成员函数返回尾元素引用
+
+```c++
+//在解引用取一个迭代器或调用front或back之前检查是否有元素
+if (!c.empty())
+{
+    //val和val2是c中第一个元素的拷贝
+    auto val = *c.begin(), val2 = c.front();
+    //val3和val4是c中最后一个元素的拷贝
+    auto last = c.end();
+    auto val3 = *(--last); //不能递减forward_list迭代器
+    auto val4 = c.back(); //forward_list不支持
+}
+```
+
+![2022-07-13 19-44-26 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 19-44-26 的屏幕截图.png)
+
+- 访问成员函数返回的是引用（即，fornt、back、下标和at）返回的都是引用。如果容器是const对象，则返回值是const引用，如果是普通引用，我们可以用来改变元素的值。
+
+- 删除元素（非array）
+
+![2022-07-13 19-52-13 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 19-52-13 的屏幕截图.png)
+
+- 从容器内部删除一个元素
+
+```c++
+//删除list中所有奇数元素
+list<int> lst = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+auto it = lst.begin();
+while (it != lst.end())
+{
+    if (*it %2) //若元素为奇数
+    {
+        it = lst.erase(it); //删除此元素
+    }
+    else
+    {
+        ++it;
+    }
+}
+```
+
+- 删除多个元素
+
+```c++
+//删除两个迭代器表示的范围内的元素
+//返回指向最后一个被删元素之后的迭代器
+elem1 = slist.erase(elem1, elem2); //调用后elem1 == elem2
+
+//删除所有元素
+slist.clear();
+slist.erase(slist.begin(), slist.end()); //等价调用
+```
+
+- 特殊的forward_list操作
+
+![2022-07-13 20-02-38 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 20-02-38 的屏幕截图.png)
+
+```c++
+//删除奇数元素
+forward_list<int> flst = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+auto prev = flst.before_begin();  //表示flst中的“首前元素”
+auto curr = flst.begin(); //表示flst中的第一个元素
+while (curr != flst.end()) //仍有元素要处理
+{
+    if (*curr % 2) //若元素是奇数
+    {
+        curr = flst.erase_after(prev); //删除并移动curr
+    }
+    else
+    {
+        prev = curr; //移动迭代器curr，指向下一个元素，prev指向curr之前的元素
+        ++curr;
+    }
+}
+```
+
+- 改变容器大小，array不支持resize。如果当前大小大于所要求大小，容器后部元素会被删除；如果当前大小小于新大小，会将新元素添加到容器后部。
+
+```c++
+list<int> ilist(10, 42); //10个int，每个都是42
+ilist.resize(15); //5个值为0添加到ilist末尾
+ilist.resize(25, -1); //将10个值为-1的元素添加到ilist的末尾
+ilist.resize(5); //从ilist末尾删除20个元素
+
+//resize接受一个可选的元素值参数（第二个参数），如果没有就默认初始化。对于类来说必须有该值或者类提供了默认构造函数
+```
+
+![2022-07-13 20-12-40 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 20-12-40 的屏幕截图.png)
+
+- 容器操作可能使迭代器失效
+
+> 在向容器插入元素后：
+
+1. 容器是vector或string，且存储空间被重新分配，则指向容器的迭代器、指针和引用都失效。如果存储空间未重新分配，指向插入位置之前的元素的迭代器、指针和引用仍有效，指向插入位置之后的迭代器、指针和引用将会失效。
+2. 对于deque，插入到首尾位置之外的任何操作都会导致迭代器、指针和引用都失效。如果在首尾位置插入元素，迭代器会失效，但指向存在的元素的引用和指针不会失效。
+3. 对于list和forward_list，指向容器的迭代器（包括尾后迭代器和首前迭代器）、指针和引用仍有效。
+
+> 当我们删除一个元素后
+
+1. 从一个容器中删除元素后，指向被删元素的迭代器、指针和引用会失效
+2. 对于list和forward_list，指向容器其他位置的迭代器（包括尾后迭代器和首前迭代器）、指针和引用仍有效。
+3. 对于deque，如果在首尾之外的任何位置删除元素，那么指向被删元素外其他元素的迭代器、引用或指针也会失效。如果删除deque尾元素，则尾后迭代器也会失效，但是其他迭代器指针和引用不受影响；如果删除的是首元素，这些也不会受影响
+4. 对于vector和string，指向被删元素之前元素的迭代器、指针和引用仍有效。
+
+注：删除元素时，尾后迭代器总会失效。
+
+- 编写改变容器的循环程序
+
+```c++
+//添加/删除vector、string或deque元素的循环程序必须考虑迭代器、引用和指针可能失效的问题。
+//傻瓜循环，删除偶数元素，复制每个奇数元素。
+vector<int> vi = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+auto iter = vi.begin(); //调用begin而不是cbegin，因为i要改变vi
+while (iter != vi.end())
+{
+    if (*iter % 2)
+    {
+        iter = vi.insert(iter, *iter); //复制当前元素
+        iter += 2; //向前移动迭代器，跳过当前元素以及插入到它之前的元素
+    }
+    else
+    {
+        iter = vi.erase(iter); //删除偶数元素
+      	//不应向前移动迭代器，iter指向我们删除的元素之后的元素
+    }
+}
+```
+
+- 不要保存end返回的迭代器，当我们添加/删除vector或string的元素后，或在deque中首元素之外任何位置添加/删除元素后，原来end返回的迭代器总会失效。
+
+```c++
+//处理容器中每个元素，在其后添加一个新元素。循环跳过新添加的元素，只处理原有元素。
+//灾难：此循环的行为是未定义的
+auto begin = v.begin(), end = v.end(); //保存尾迭代器的值是一个坏主意
+while (begin != end)
+{
+    //做一些处理
+    //插入新值，对begin重新赋值，否则他就会失效
+    ++begin; //向前移动begin， 因为我们想在此元素之后插入元素
+    begin = v.insert(begin, 42); //插入新值
+    ++begin; //向前移动begin跳过我们刚刚加入的元素
+}
+
+//更安全方法，每个循环步添加/删除元素后都重新计算end
+while (begin != end)
+{
+    //做一些处理
+    ++begin; //向前移动begin， 因为我们想在此元素之后插入元素
+    begin = v.insert(begin, 42); //插入新值
+    ++begin; //向前移动begin跳过我们刚刚加入的元素
+}
+```
+
+- 管理容量的成员函数
+
+![2022-07-13 20-43-46 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 20-43-46 的屏幕截图.png)
+
+```c++
+//如果容量小于reserve的参数n，则重新分配至少n个字节。如果容量大于n，则reserve什么也不做
+//resize只改变容器中的元素数目，而不是容器容量。
+//我们可以调用shrink_to_fit来要求deque、vector或string退回不需要的内存空间。
+```
+
+- 额外的string操作
+- 构造string的其他方法
+
+![2022-07-13 20-57-25 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 20-57-25 的屏幕截图.png)
+
+![2022-07-13 21-02-14 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-02-14 的屏幕截图.png)
+
+- substr操作
+
+![2022-07-13 21-03-08 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-03-08 的屏幕截图.png)
+
+![2022-07-13 21-03-38 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-03-38 的屏幕截图.png)
+
+- 改变string的其他方法
+
+![2022-07-13 21-10-06 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-10-06 的屏幕截图.png)
+
+![2022-07-13 21-10-52 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-10-52 的屏幕截图.png)
+
+- append和replace函数
+
+```c++
+//append是在string末尾进行插入操作的一种简写形式
+string s("C++ Primer"), s2 = s; //将s和s2初始化为"C++ Primer"
+s.insert(s.size(), " 4th Ed."); //s == "C++ Primer 4th Ed."
+s2.append(" 4th Ed."); //等价方法
+```
+
+```c++
+//replace操作是调用erase和insert的一种简写形式
+//将"4th"替换为"5th"的等价方法
+s.erase(11, 3); //s == "C++ Primer Ed,"
+s.insert(11, "5th"); //s == "C++ Primer 5th Ed."
+//从位置11开始，删除3个字符并插入"5th"
+s2.replace(11, 3, "5th"); //等价方法，s == s2
+s.replace(11, 3, "Fifth"); //s == "C++ Primer Fifth Ed."
+```
+
+![2022-07-13 21-17-06 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-17-06 的屏幕截图.png)
+
+![2022-07-13 21-17-26 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-17-26 的屏幕截图.png)
+
+- string搜索操作
+
+```c++
+//搜索都返回一个string::size_type值，表示匹配的下标。搜索失败，返回一个名为string::npos的static成员，标准库将其定义为一个const string::size_type类型，并初始化为-1。由于npos是一个unsigned类型，此初始值意味着npos等于任何string最大的可能大小。
+
+//find找到返回第一个匹配位置的下标，否则返回npos
+string name("AnnaBelle");
+auto pos1 = name.find("Anna"); //pos1 = 0
+//定位name中第一个数字
+string numbers("0123456789"), name("r2d2");
+auto pos = name.find_first_of(numbers); //pos == 1
+//要搜索第一个不再参数的字符，调用find_first_not_of。
+string dept("03714p3");
+auto pos= dept.find_first_not_of(numbers); //返回5
+```
+
+![2022-07-13 21-27-42 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-27-42 的屏幕截图.png)
+
+- 指定在哪里开始搜索
+
+```c++
+//循环的搜索子字符串出现的所有位置
+string::size_type pos = 0;
+//每步循环查找name中下一个数
+while ((pos = name.find_first_of(numbers, pos)) != string::npos)
+{
+    cout << "found number at index: " << pos << "element is" << name[pos] << endl;
+    ++pos; //移动到下一个字符
+}
+```
+
+- 逆向搜索
+
+```c++
+string river("Mississippi");
+auto first_pos = river.find("is"); //返回1，表示第一个"is"的位置
+auto last_pos = river,rfind("is"); //返回4，表示最后一个"is"的位置
+```
+
+- compare函数
+
+![2022-07-13 21-37-46 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-37-46 的屏幕截图.png)
+
+```c++
+//compare调用
+s.compare(s2);
+```
+
+- 数值转换
+
+```c++
+//实现数值数据与标准库string之间的转换
+int i = 42;
+string s = to_string(i); //整数i转换为字符表示形式
+double d = stod(s); //将字符串s转换为浮点数
+
+//要转换为数值的string中第一个非空白符必须是数值中可能出现的字符
+strings2 = "pi = 3.14";
+//转换s中以数字开始的第一个字串，结果d = 3.14
+d = stod(s2.substr(s2.find_first_of("+-.0123456789")));
+//string参数中第一个非空白符必须是符号或数字。它可以以0x或0X开头来表示16进制数，对将字符转为浮点数的值，string参数可以小数点开头，并且可以包含e或E来表示指数部分。根据基不同，string参数可以包含字母字符，对应大于数字9的数。
+注：如果string不能转为数值，函数抛出invalid_argument异常。如果转换的数值无法用任何类型来表示，则抛出out_of_range异常。
+```
+
+![2022-07-13 21-46-20 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-46-20 的屏幕截图.png)
+
+- 容器适配器，除顺序容器，标准库还定义了三个顺序容器适配器：stack、queue和priority_queue。
+
+![2022-07-13 21-48-03 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-48-03 的屏幕截图.png)
+
+- 定义一个适配器，每个适配器都定义两个构造函数，默认构造函数和接受一个容器的构造函数拷贝该容器来初始化适配器。
+
+```c++
+deque<int> deq;
+stack<int> stk(deq); //从deq拷贝元素到stk
+//默认情况下，stack和queue是基于deque实现，priority_queue是在vector之上实现的。可以在创建适配器时将一个命名的顺序容器作为第二个类型参数，来重载默认容器类型。
+//在vector上实现空栈
+stack<string, vector<string>> str_stk;
+//str_stk2在vector上实现，初始化时保存svec的拷贝
+stack<string, vector<string>> str_stk2(svec);
+
+//所有适配器必有有添加、删除能力，所以不能构造在array之上。也不能用forward_list构造适配器，因为适配器要有添加删除及访问为元素的能力。stack只要求push_back、pop_back和back操作，可以使用除array和forward_list之外的任何容器。queue适配器要求back、push_back、front和push_front，因此可以构造于list或deque之上，但不能基于vector构造。priority_queue除了front、push_back和pop_back操作之外还要求随机访问能力，因此可以构造于vector或deque之上，但不能基于list构造。
+```
+
+- 栈适配器
+
+```c++
+stack<int> intStack; //空栈
+//填满栈
+for (size_t ix = 0; ix != 10; ++ix)
+{
+    intStack.push(ix); //intStack保存0-9
+}
+while (!intStack.empty())
+{
+    int value = intStack.top();
+    intStack.pop(); //弹出栈顶元素
+}
+```
+
+![2022-07-13 21-58-17 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-58-17 的屏幕截图.png)
+
+- 队列适配器
+
+![2022-07-13 21-59-05 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-13 21-59-05 的屏幕截图.png)
+
+​	priority_queue允许我们为队列中的元素建立优先级。新加入的元素会排在所有优先级比他低的已有元素之前。标准库在元素类型上使用<运算符来确定相对优先级。
+
+## chap 10泛型算法
 
 
 
