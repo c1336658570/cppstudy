@@ -2685,9 +2685,10 @@ void biggies(vector<string> &words, vector<string>::size_type sz,
     for_each(words.begin(), words.end(), 
              [=, &os](const string &s){ os << s << c; });
 }
+//混合使用隐式捕获和显式捕获时，捕获的第一个列表必须是=或&，表示默认捕获方式。
 ```
 
-
+![2022-07-14 11-26-37 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 11-26-37 的屏幕截图.png)
 
 
 
