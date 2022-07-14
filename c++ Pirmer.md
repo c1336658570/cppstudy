@@ -2388,5 +2388,306 @@ while (!intStack.empty())
 
 ## chap 10泛型算法
 
+- 概述：通常情况，算法不操作容器，而是便利两个迭代器之间的元素
+
+```c++
+//标准库中的find算法
+int val = 42; //将要查找的值
+int result = find(vec.cbegin(), vec.cend(), val);
+//报告结果
+cout << "The value" << val << 
+    (result == vec.cend() ? " is not present" : " is present")<< endl;
+//找到，返回给定元素迭代器，没找到，返回指向最后一个元素之后的迭代器
+```
+
+- 只读算法
+
+```c++
+int sum = accumulate(vec.cbegin(), vec.cend(), 0);
+//将sum设置为vec中元素的和，和初始值为0
+
+//将vector中的所有string连接起来
+string sum = accumulate(v.cbegin(), v.cend(), string("")); //正确
+string sum = accumulate(v.cbegin(), v.cend(), string("")); //错误，""为const char *，没有+运算符。
+```
+
+- 操作两个序列的算法
+
+```c++
+//roster2中的元素数目至少和roster1一样多
+euqal(roster1.cbegin(), roster1.cend(), roster2.cbegin()); 
+//euqal利用迭代器，因此可以操作不同容器中的相同类型元素（或者可以使用==比较的不同类型元素）
+//roster1可以是vector<string>，而roster2可以是list<const char *>
+```
+
+- 写容器算法，算法不执行容器操作，因此它们自身不可能改变容器大小
+
+```c++
+//fill
+fill(vec,begin(), vec.end(), 0); //将每个元素置为0
+//将容器的的一个子序列置为10
+fill(vec.begin(), vec.begin() + vec.size() / 2, 10);
+```
+
+- 算法不检查写操作
+
+```c++
+vector<int> vec; //空vector
+//使用vec，赋予它不同值
+//初始迭代器	容器大小	要初始化的值
+fill_n(vec.begin(), vec.size(), 0); //将所有元素置0
+fill_n(dest, n, val); //从dest开始的序列至少包含n个元素
+
+vector<int> vec; //空向量
+//灾难，修改vec中10个不存在的元素
+fill_n(vec.begin(), 10, 0);
+```
+
+- 介绍back_inserter，保证算法有足够空间容纳输出数据的方法是使用插入迭代器。back_inserter定义在头文件iterator中的一个函数。它接受一个指向容器的引用，返回一个与该容器绑定的插入迭代器。
+
+```c++
+vector<int> vec;
+auto it = back_inserter(vec); //通过它赋值会将元素添加到vec中
+*it = 42; //vec最重现在有一个元素，值为12
+
+//使用back_inserter创将一个迭代器，作为算法的目的位置使用
+vector<int> vec;
+//正确
+fill_n(back_inserter(vec), 10, 0); //添加10个元素到vec
+```
+
+- 拷贝算法，3个参数，前两个表示输入范围，第三个表示目的序列起始位置。传递给copy的目的序列至少包含于输入序列一样多的元素。
+
+```c++
+int a1[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+int a2[sizeof(a1) / sizeof(*a1)];
+//ret指向拷贝到a2的尾元素之后的位置
+auto ret = copy(begin(a1), end(a1), a2); //把a1的内容拷贝给a2
+```
+
+```c++
+//replace接受4个参数，前两个迭代器表示序列，后两个一个要搜索的值一个新值
+replace(ilst.begin(), ilst.end(), 0, 42); //将0替换为42
+replace_copy(ilst.cbegin(), ilst.cend(), back_inserter(ivec), 0, 42); //ilst的值为改变，ivec包含ilst的一份拷贝，不过ilst中值为0的地方变为了42
+```
+
+- 消除重复单词
+
+```c++
+void elimDups(vector<string> &words)
+{
+    //按字典排序words，以便查找重复单词
+    sort(words.begin(), words.end());
+    //unique重排输入范围，使每个单词只出现一次
+    //排列在范围前部，返回指向不重复区域之后一个位置的迭代器
+    auto end_unique = unique(words.begin(), words.end());
+    //使用erase删除重复单词
+    words.erase(end_unique, words.end());
+}
+//unique只是将相邻的重复元素覆盖掉了，元素顺序发生了改变，总元素个数并不变，有几个相邻元素，最后面就有几个元素我们不知道是什么。
+```
+
+- 定制操作
+- 向算法传递函数
+
+- 谓词：一元谓词（一个参数）和二元谓词（两个参数）
+
+```c++
+//比较函数，用来按长度排序单词
+bool isShorter(const string &s1, const string &s2)
+{
+    return s1.size() < s2.size();
+}
+//按长度由短至长排序words
+sort(words.begin(), words.end(), isShorter);
+```
+
+- 排序算法
+
+```c++
+//将words按大小重排同时还希望具有相同长度的元素按字典排列。使用stable_sort算法（稳定的）。
+elimDups(words); //将words按字典序重拍，并消除重复单词
+//按长度重新排序，长度相同的单词维持字典序
+stable_sort(words.begin(), words.end(), isShorter);
+for (const auto &s : words) //无须拷贝字符串
+    cout << s << " ";
+cout << endl;
+```
+
+- lambda表达式
+
+```c++
+//使程序只打印大于等于给定长度的单词
+void biggies(vector<string> &words, vector<string>::size_type sz)
+{
+    elimDups(words); //将words按字典序排序，删除重复单词
+    //按长度排序，长度相同的单词维持字典序
+    stable_sort(words.begin(), words.end(), isShorter);
+    //获取一个迭代器，指向第一个满足size() >= sz的元素
+    //计算满足size >= sz的元素数目
+    //打印长度大小等于给定值的单词，每个单词后跟一个空格
+}
+```
+
+- 介绍lambda，lambda表达式表示一个可调用的代码单元。可以理解为一个未命名的内联函数，与函数不同的是，lambda表达式可能定义在函数内部。
+
+```c++
+//lambda表达式形式
+[capture list](parameter list) -> return type{ function body }
+capture list(捕获列表)是一个lambda所在函数中定义的局部变量列表，通常为空；return、parameter lsit和function body于任何函数一样，表示返回类型、参数列表和函数体。lambda必须使用尾置返回来指定返回类型。
+//可以忽略参数列表和返回类型，但必须包含捕获列表和函数体，忽略返回类型会通过return推断返回类型
+auto f = [] { return 42; };
+//使用调用运算符调用lambda
+cout << f() << endl; //打印42
+```
+
+- 向lambda传递参数，与普通函数一样，但是lambda不能有默认参数。
+
+```c++
+//于isShorter函数功能完全相同的lambda
+[]{const string &a, const string &b}
+{
+    return a.size() < b.size();
+}
+//利用lambda调用stable_sort
+stable_sort(words.begin(), words.end(), 
+            [](const string &a, const string &b){ return a.size() < b.size(); });
+```
+
+- 使用捕获列表
+
+```c++
+//正确
+[sz](const string &a)
+{
+    return a.size() >= sz;
+}
+
+//错误，sz未捕获
+[](const string &a)
+{
+    return a.size() >= sz;
+}
+```
+
+- 调用
+
+``` c++
+//使用此lambda，查找第一个长度大于等于sz的元素
+//获取一个迭代器，指向第一个满足size() >= sz的元素
+auto wc = find_if(words.begin(), words.end(), 
+                  [sz](const string &a){ return a.size() >= sz; });
+//返回一个迭代器，指向第一个字符串长度大于等于sz的迭代器，如果不存在，返回words.end()的一个拷贝;
+
+//使用find_if返回的迭代器计算从开始到words末尾一共多少个元素
+//计算满足size >= sz的元素数目
+auto count = words.end() - wc;
+cout << cout << " " << make_plural(count, "word", "s") << " of length " << sz 
+    <<" or longer" << endl;
+```
+
+- for_each算法
+
+```c++
+//打印长度大于等于给定值的单词，每个单词后面接一个空格
+for_each(wc, words.end(), 
+         [](const string &s){cout << s << " ";});
+cout << endl;
+```
+
+- 完成的biggies
+
+```c++
+void biggies(vector<string> &words, vector<string>::size_type sz)
+{
+	elimDups(words); // 将words按字典排序，删除重复单词
+	//按长度排序，长度相同的单词维持单词序
+	stable_sort(words.begin(), words.end(),
+				[](const string &a, const string &b)
+				{ return a.size() < b.size(); });
+
+	//获取第一个迭代器，指向第一个满足size() >= sz的元素
+	auto wc = find_if(words.begin(), words.end(),
+					  [sz](const string &a)
+					  { return a.size() >= sz; });
+
+	//计算 size >= sz 的元素个数
+	auto count = words.end() - wc;
+	cout << count << " " << make_plural(count, "word", "s")
+		 << " of length " << sz << " or longer" << endl;
+
+	//打印给定大小或更长的单词，每个单词后跟一个空格
+	for_each(wc, words.end(),
+			 [](const string &s)
+			 { cout << s << " "; });
+	cout << endl;
+}
+```
+
+- lambda捕获和返回
+
+```c++
+//当定义一个lambda时，编译器会生成一个于lambda对应的新的（未命名的）类类型。
+```
+
+- 值捕获，类似参数传递，捕获的方式也可以是值或引用，被捕获的变量的值是在lambda创建时拷贝，而不是调用时拷贝
+
+```c++
+void func1()
+{
+    size_t v1 = v2; //局部变量
+    //将v1拷贝到名为f的可调用对象
+    auto f = [v1] { return v1; };
+    v1 = 0;
+    auto j = f(); //j为42；f保存了我们创建它时的拷贝
+}
+```
+
+- 引用捕获
+
+```c++
+void fun2()
+{
+    size_t v1 = 42; //局部变量
+    //对象f2包含v1的引用
+    auto f2 = [&v1] { return v1; };
+    v1 = 0;
+    auto j = f2(); //j为0; f2保存v1的引用，而非拷贝
+}
+```
+
+```c++
+//biggies函数接受一个ostream的引用，用来输出数据，并接受一个字符作为分隔符
+void biggies(vector<string> &words, vector<string>::size_type sz, 
+             ostream &os = cout, char c = ' ')
+{
+    //与之前例子一样的重排words的代码
+    //打印cout的语句改为打印到os
+    for_each(words.begin(), words.end(), 
+            [&os, c](const string &s) { os << s << c; });
+}
+```
+
+- 隐式捕获，&表示采用捕获引用方式，=则表示采用值捕获方式。
+
+```c++
+//重写传给find_if的lambda
+//sz为隐式捕获，值捕获方式
+wc = find_if(words.begin(), words.end(), 
+             [=](const string &s){ return s.size() ?= sz; });
+
+//一部分采用值捕获，对其他变量采用引用捕获，可以混合使用隐式捕获和显式捕获
+void biggies(vector<string> &words, vector<string>::size_type sz, 
+             ostream &os = cout, char c = ' ')
+{
+	//其他处理与前例一样
+    //os隐式捕获，音乐宏捕获方式；c显示捕获，值捕获方式
+    for_each(words.begin(), words.end(), 
+             [=, &os](const string &s){ os << s << c; });
+}
+```
+
+
+
 
 
