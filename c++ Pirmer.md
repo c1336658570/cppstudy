@@ -3022,3 +3022,285 @@ remove_copy_if(v1.begin(), v1.end(), back_inserter(v2), [](int i) { return i% 2;
 
 - 链表特有的操作会改变容器，链表特有版本和通用版本的区别是链表版本的操作会改变底层的容器。例如，remove的链表版本会删除指定元素。unique的链表版本会删除第二个和后继的重复元素。类似的，merge和splice会销毁其参数。通用版merge将合并的序列写到一个给定的目的迭代器；两个输入序列是不变的。而链表版本的merge函数会销毁给定的链表——元素从参数指定的链表中删除，被合并到调用merge的链表对象。在merge后，俩链表的元素依然存在，但它们在同一链表中。
 
+![2022-07-15 10-21-09 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 10-21-09 的屏幕截图.png)
+
+- 使用map
+
+```c++
+map<string, size_t> word_count; //string到size_t的空map
+string word;
+while (cin >> word)
+{
+    ++word_count[word];
+}
+for (const auto &w : word_count)
+{
+    cout << w.first << " occurs " << w.second << 
+        ((w.second > 1) ? "times" : "time") << endl;
+}
+```
+
+- 使用set
+
+```c++
+//忽略常见单词，"the"、"and"、"or"等
+map<string, size_t> word_count; //string到size_t的空map
+set<string> exclude = {"The", "But", "And", "Or", "An", "A", 
+                       "the", "but", "and", "or", "an", "a"};
+string word;
+while (cin >> word)
+{
+    if (exclued.find(word) == exclude.end())
+    	++word_count[word];
+}
+for (const auto &w : word_count)
+{
+    cout << w.first << " occurs " << w.second << 
+        ((w.second > 1) ? "times" : "time") << endl;
+}
+```
+
+- 关联容器概述，关联容器不支持顺序容器中的push_front或push_back。
+
+- 定义关联容器，可以默认初始化。也可以将关联容器初始化为另一种同类型的拷贝，或是从一个值范围来初始化关联容器，只要这些值类型可以相互转换就行。也可以进行值初始化
+
+```c++
+map<string, size_t> word_count; //空容器
+//列表初始化
+set<string> exclude = {"The", "But", "And", "Or", "An", "A", 
+                       "the", "but", "and", "or", "an", "a"};
+//三个元素；authors将姓名映射为名
+map<string, string> authors = { {"Joyce", "James"},
+                                {"Austen", "Jane"},
+                               	{"Dickens", "Charles"} };
+```
+
+- 初始化multimap或multiset，map和set中关键字必须是唯一的。但multimap或multiset没此限制
+
+```c++
+vector<int> ivec;
+for (vector<int>::size_type i = 0; i != 10; ++i)
+{
+    ivec.push_back(i);
+    ivec.push_back(i);
+}
+
+set<int> iset(ivec.cbegin(), ivec.cend());
+multiset<int> miset(ivec.cbegin(), ivec.cend());
+cout << ivec.size() << endl; //20
+cout << iset.size() << endl; //10
+cout << miset.size() << endl; //20
+```
+
+- 使用关键字类型的比较函数
+
+```c++
+bool compareIsbn(const Sales_data &lhs, const Sales_data &rhs)
+{
+    return lhs.isbn() < rhs.isbn();
+}
+
+//用尖括号指出要定义哪种类型的容器，自定义的操作必须在尖括号中紧跟着元素类型给出
+multiset<Sales_data> a; //错误，Sales_data没有<运算符，multiset是有序的，需要用<进行排序
+//bookstore中多条记录可以有相同的ISBN
+//bookstore中的元素以ISBN的顺序进行排列
+multiset<Sales_data, decltype(compareIsbn)*> bookstore(compareIsbn); //compareIsbn等价于&compareIsbn
+//用compareIsbn初始化bookstore对象，表示我们向bookstore添加元素时，通过调用compareIsbn为这些元素排序
+```
+
+- pair类型，定义在头文件utility中
+
+```c++
+//默认初始化，容器都为空，size_t为0
+pair<string, string> anon; //保存两个string
+pair<string, size_t> word_count; //保存一个string和一个size_t
+pair<string, vector<int>> line; //保存string和vecotr<int>
+
+//为每个成员初始化
+pair<string, string> author("James", "Joyce"); //创建了一个名为author的pai，两个成员，"James"和"Joyce"。pair的数据成员是public，一个first，一个second
+//打印
+cout << w.first << " occurs " << w.second << 
+    ((w.second > 1) ? " times" : " time") << endl;
+//w是指向map中某个元素的引用
+```
+
+![2022-07-15 11-00-22 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 11-00-22 的屏幕截图.png)
+
+- 创建pair对象的函数
+
+```c++
+pair <string, int> process(vector<string> &v)
+{
+    //处理v
+    if (!v.empty())
+    {
+        return {v.back(), v.back().size()}; //列表初始化
+        //return pair<string, int>(v.back(), v.back().size());
+        //return make_pair(v.back(), v.back().size());
+    }
+    else
+    {
+        return pair<string, int>(); //隐式构造返回
+    }
+}
+```
+
+- 关联容器操作
+
+![2022-07-15 11-17-48 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 11-17-48 的屏幕截图.png)
+
+```c++
+//我们不能改变一个元素的关键字，所以pair关键字部分是const
+set<string>::value_type v1; //v1是一个string
+set<string>::key_type v2; //v2是一个string
+map<string, int>::value_type v3; //v3是一个pair<const string, int>
+map<string, int>::key_type v4; //v4是一个string
+map<string, int>::mapped_type v5; //v5是一个int
+```
+
+- 关联容器迭代器，解引用关联容器迭代器会得到一个value_type的值的引用。
+
+```c++
+//获得指向word_count中一个元素的迭代器
+auto map_it = word_count.begin();
+//*map_it是指向一个pair<const string, size_t>对象的引用
+cout << map_it->first;
+cout << " " << map_it->second;
+map_it->first = "new key"; //错误，关键字是const的
+++map_it->second; //正确，可以通过迭代器改变元素
+```
+
+- set的迭代器是const的
+
+```c++
+//虽然set同时定义了iterator和const_iterator，但是可以用set迭代器读元素，但不能修改
+set<int> iset = {0, 1, 2, 3, 4 ,5, 6, 7, 8, 9};
+set<int>::iterator set_it = iset.begin();
+if (set_it != iset.end())
+{
+     *set_it = 42; //错误，set关键字是只读的
+    cout << *set_it << endl; //正确
+}
+```
+
+- 遍历关联容器
+
+```c++
+//map和set都支持begin和end操作
+auto map_it = word_count.cbegin();
+while (map_it != word_count.cend())
+{
+    cout << map_it->first << " occurs " << map_it->second << " times" << endl;
+    ++map_it; 
+}
+```
+
+- 关联容器和算法，通常不使用泛型算法。关键字是const意味着不能对关联容器传递修改或重排元素的算法。对关联容器使用算法，要么将它当作一个源序列，要么当作一个目的位置。例如，可以使用泛型copy算法将元素从一个关联容器拷贝到另一个序列，可以调用inserter将一个插入器绑定到一个关联容器。通过inserter，可以将关联容器当作一个目的位置来调用另一个算法。
+
+- 添加元素
+
+```c++
+vector<int> ivec = {2, 4, 6, 8, 2, 4, 6, 8}; //8个元素
+set<int> set2; //空
+set2.insert(ivec.cbegin, ivec.cend()); //set2有4个元素
+set2.insert({1, 3, 5, 7, 1, 3, 5, 7}); //set2现在有8个元素
+//insert俩版本，接受一对迭代器，或初始化器列表
+```
+
+- 向map添加元素
+
+```c++
+//先创建pair，再添加，四种方法
+word_count.insert({word, 1});
+word_count.insert(make_pair(word, 1));
+word_count.insert(pair<string, size_t>(word, 1));
+word_count.insert(map<string, size_t>::value_type(word, 1));
+```
+
+![2022-07-15 11-40-53 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 11-40-53 的屏幕截图.png)
+
+- 检测insert的返回值，insert（或emplace）返回的值依赖于容器类型和参数。对于不包含重复关键字的容器，添加单一元素的insert和emplace版本返回一个pair，告诉我们插入是否成功。pair的first成员是一个迭代器，指向具有给定关键字的元素；second成员是一个bool值，指出元素是否插入成功还是已经存在于容器中。如果关键字已经存在，insert什么也不做，且返回值bool部分为false。关键字不存在，元素被插入，bool值为true。
+
+```c++
+//统计每个单词在输入中出现次数
+map<string, size_t> word_count;
+string word;
+while (cin >> word)
+{
+    //插入一个元素，关键字等于word，值为1；
+    //若word已在word_count中，insert什么也不做
+    auto ret = word_count.insert({word, 1});
+    if (!ret.second) //word已在word_count中
+        ++ret.first->second; //递增计数器
+}
+```
+
+- 向multiset或multimap添加元素
+
+```c++
+//可以同时添加多个相同关键字的元素
+multimap<string, string> authors;
+//插入敌一个元素，关键字为Barth, John
+authors.insert({"Barth, John", "Sot-Weed Factor"});
+//正确，添加第二个元素，关键字也是Barth, John
+authors.insert({"Barth, John", "Lost in the Funhouse"});
+```
+
+- 删除元素，erase，三个版本，传给一个迭代器或一个迭代器对来删除一个或一个元素范围。指定元素被删除，返回void。第三个版本接受一个key_type参数。删除所有匹配给定关键字的元素（如果存在的话），返回删除元素的数量。
+
+```c++
+//删除一个关键子，返回删除的元素数量
+if (word_count.erase(removal_word))
+{
+    cout << "ok: " removal_word << " removed\n";
+}
+else
+{
+    cout << "oops: " removal_word << " not found!\n";
+}
+//对于保存不重复关键字的容器，erase总返回0或1，返回0则表明乡删除的元素并不在容器中。对重复关键字容器，删除数量可能大于1
+auto cnt = authors.erase("Brath, John");
+```
+
+![2022-07-15 11-57-23 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 11-57-23 的屏幕截图.png)
+
+- map下标操作，只有map可以通过下标，multimap或unordered_multimap不行，因为它们一个关键子可能对应多个值，set不支持，set只有值。map和unordered_map有at函数。map下标运算接受一个索引（关键字），如果存在，就获得该关键字的值。如果不存在，就会创建一个元素插入到map中，关键值进行值初始化。
+
+```c++
+map <string, size_t> word_count; //empty map
+//插入一个关键字为Anna的元素，并进行值初始化；然后将1赋予它
+word_count["Anna"] = 1;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
