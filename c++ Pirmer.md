@@ -2674,7 +2674,7 @@ void biggies(vector<string> &words, vector<string>::size_type sz,
 //重写传给find_if的lambda
 //sz为隐式捕获，值捕获方式
 wc = find_if(words.begin(), words.end(), 
-             [=](const string &s){ return s.size() ?= sz; });
+             [=](const string &s){ return s.size() >= sz; });
 
 //一部分采用值捕获，对其他变量采用引用捕获，可以混合使用隐式捕获和显式捕获
 void biggies(vector<string> &words, vector<string>::size_type sz, 
@@ -2690,5 +2690,335 @@ void biggies(vector<string> &words, vector<string>::size_type sz,
 
 ![2022-07-14 11-26-37 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 11-26-37 的屏幕截图.png)
 
+- 可变的lambda，默认情况，lambda不会改变值被拷贝的变量的值，如果希望能改变一个被捕获变量的值，就必须在参数列表首加上关键字mutable。
 
+```c++
+void fun3()
+{
+    size_t v1 = v2; //局部变量
+    //f可以改变它所捕获的变量的值
+    auto f = [v1] () mutable{ return ++ v1; }
+    v1 = 0;
+    auto j = f(); //j为43
+}
+```
+
+- 指定lambda返回类型，默认情况下，lambda体包含return之外的任何语句，则编译器假定此lambda返回void。
+
+```c++
+//使用标准库transform算法和一个lambda将一个序列中每一负数替换为其绝对值
+transform(vi.begin(), vi.end(), vi.begin, 
+          [](int i){ return i < 0 ? -1 : i; });
+//函数transform接受三个迭代器和一个可调用参数。第三个迭代器可以和第一个相同
+
+//错误，不能推断lambda的返回类型
+transform(vi.begin(), vi.end(), vi.begin, 
+          [](int i){ if (i < 0) return -1; else return i; });
+//编译器推断返回值为void，但是它返回了int值。当我们需要为一个lambda定义返回类型时，必须使用尾置返回类型
+transform(vi.begin(), vi.end(), vi.begin, 
+          [](int i) -> int
+          { if (i < 0) return -1; else return i; });
+```
+
+- 参数绑定，对于捕获列表为空的lambda通常可以用函数替换，捕获列表不为空，用函数替换就不那么容易了。例如用find_if调用中的lambda比较一个string和一个给定大小。
+
+```c++
+bool check_size(const string &s, string::size_type sz)
+{
+    return s.size() >= sz;
+}
+//我门不能以这个函数作为find_if的一个参数。find_if接受一个一元谓词。
+```
+
+- 标准库bind函数,定义在functional头文件中。
+
+```c++
+//bind的一般形式
+auto newCallable = bind(callable, arg_list);
+//newCallable本身是一个可调用对象，arg_list是一个逗号分隔的参数列表，对应给定的callable的参数。即，当我们调用newCallable时，newCallable会调用callable，并传递给它arg_list中的参数。
+//arg_list中可能包含形如_n的名字，其中n是一个整数。这些参数时“占位符”，表示newCallable的参数。_1表示的一个参数，_2为第二个参数，依次类推。
+```
+
+- 绑定check_size的sz参数
+
+```c++
+//check6时一个可调用对象，接受一个string类型的参数
+//并用此string和值6来调用check_size
+auto check6 = bind(check_size, _1, 6);
+//只有1个占位符，表示check6接受单一参数。占位符出现在arg_list的第一个位置，表示check6的此参数对应check_size的第一个参数。此参数是一个const string&。
+string s = "hello";
+bool b1 = check6(s); //check6s会调用check_size(s, 6)
+
+//使用bind，将原来基于lambda的find_if调用
+auto wc = find_if(words.begin(), words.end(), 
+             [sz](const string &s)
+替换为如下
+auto wc = find_if(words.begin(), words.end(),
+                 bind(check_size, _1, sz));
+```
+
+- 使用placeholders名字，名字_n定义在一个名为placeholders的命名空间中，而这个命名空间定义在std命名空间
+
+```c++
+using std::placeholders::_1		//声明一个名字_1
+using namespace namespace_name  //所有来自namespace_name命名空间的名字都能直接用
+using namespace std::placeholders; //声明所有占位符_1，_2，...
+//placeholders和bind函数都定义在functional头文件中
+```
+
+- bind函数，可以用bind修正参数的值。
+
+```c++
+auto g = bind(f, a, b, _2, c, _1); 
+g(_1, _2); //g(_1, _2)映射为f(a, b, _2, c, _1);
+```
+
+- 用bind重排参数顺序
+
+```c++
+//按单词长度由短至长
+sort(words.begin(), words.end(), isShorter);
+//按单词长度由长至短
+sort(words.begin(), words.end(), bind(isShorter, _2, _1));
+```
+
+- 绑定引用参数，默认情况下，bind的那些不是占位符的参数背靠背到bind返回的可调用对象中。但是与lambda类似，有时对有些绑定的参数我们希望以引用方式传递，或是要绑定参数的类别无法拷贝
+
+```c++
+//为了替换一个引用方式捕获ostream的lambda
+//os是一个局部变量，引用一个输出流
+//c是一个局部变量，类型为char
+for_each(words.begin(), words.end(), [&os, c](const string &s) { os << s << c; });
+//同样功能的函数
+ostream &print(ostream &os, const string &s, char c)
+{
+    return os << s << c;
+}
+//错误，不能拷贝os
+for_each(words.begin(), words.end(), bind(print, os, _1, ' '));
+//希望bind引用而不是拷贝，调用ref函数
+for_each(words.begin(), words.end(), bind(print, ref(os), _1, ' '));
+//cref函数，生成一个保存const引用的类。ref和cref也定义在functional头文件中
+```
+
+- 再探迭代器
+
+1. 插入迭代器：绑定在一个容器上，可以用来向容器插入元素
+2. 流迭代器：绑定在输入或输出流上，用来便利所关联的IO流
+3. 反向迭代器：向后而不是向前移动。除了forward_list之外的标准库容器都有反向迭代器。
+4. 移动迭代器：这些专用迭代器不是拷贝其中元素，而是移动它们。
+
+- 插入迭代器
+
+<img src="/home/cccmmf/cppstudy/C++primer/2022-07-14 15-34-52 的屏幕截图.png" alt="2022-07-14 15-34-52 的屏幕截图" style="zoom:200%;" />
+
+1. back_inserter创建一个使用push_back的迭代器
+2. front_inserter创建一个使用push_front的迭代器
+3. inserter创建一个使用insert的迭代器。此函数接受第二个参数，这个参数必须是指向给定容器的迭代器。元素将被插入到给定迭代器所表示的元素之前。
+
+```c++
+//调用inserter(c, iter)时，我们得到一个迭代器。
+*it = val;
+//等价于如下代码
+it = c.insert(it, val); //it指向新加入的元素
+++it; //递增it使它指向原来元素
+
+//front_inserter生成的迭代器与inserter生成的迭代器不完全一样。使用front_inserter，元素总插入到第一个元素之前。即使传递给inserter的位置原来指向第一个元素，只要插入一个新元素，该元素就不再是容器首元素了
+list<int> lst = {1, 2, 3, 4};
+list<int> lst2, lst3; //空list
+//拷贝完成之后，lst2包含4 3 2 1
+copy(lst.cbegin(), lst.cend(), front_inserter(lst2));
+//拷贝完成之后，lst3包含1 2 3 4
+copy(lst.cbegin(), lst.cend(), inserter(lst3, lst3.begin()));
+```
+
+- iostream迭代器。istream_iterator读取输入流。ostream_iterator向一个输出流写数据。
+- istream_iterator操作，一个istream_iterator使用>>读取流。
+
+```c++
+//创建istream_iterator时，可以绑定到一个流，也可以默认初始化，这样就创建了一个尾后迭代器
+istream_iterator<int> int_it(cin); //从cin读取int
+istream_iterator<int> int_eof; //尾后迭代器
+ifstream in("afile");
+istream_iterator<string> str_it(in); //从"afile"读取字符串
+```
+
+```c++
+//使用istream_iterator从标准输入读数据，存入vector中
+istream_iterator<int> in_iter(cin); //从cin读取int
+istream_iterator<int> eof; //istream尾后迭代器
+while (in_iter != eof) //当有数据可供读取时
+    //后值递增运算符读取流，返回迭代器的旧值
+    //解引用迭代器，获得从流读取的前一个值
+    vec.push_back(*in_iter++);
+
+//重写为如下形式
+istream_iterator<int> in_iter(cin), eof;
+vector<int> vec(in_iter, eof);
+```
+
+![2022-07-14 15-54-29 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 15-54-29 的屏幕截图.png)
+
+- 使用算法操作流迭代器
+
+```c++
+//使用一对istream_iterator来调用accumulate
+istream_iterator<int> in(cin), eof;
+cout << accumulate(in, eof, 0) << endl; //求输入总和
+```
+
+- istream_iterator允许使用懒惰求值，标准库不保证迭代器立刻从流中读取数据，但是保证在第一次解引用以前从流中读取数据操作已经完成
+- ostream_iterator操作，可以对任何具有输出运算符（<<运算符）的类型定义为ostream_iterator。创建ostream_iterator时，可以提供（可选的）第二参数，它是一个C风格的字符串，在输出每个元素后都会打印此字符串。必须将ostream_iterator绑定到一个指定的流，不允许空的或表示尾后位置的ostream_iterator
+
+![2022-07-14 16-07-04 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 16-07-04 的屏幕截图.png)
+
+```c++
+//利用ostream_iterator来输出值的序列
+ostream_iterator<int> out_iter(cout, " ");
+for (auto e : vec)
+{
+    *out_iter++ = e; //赋值语句实际上将元素写到cout
+}
+cout << endl;
+//循环重写
+ostream_iterator<int> out_iter(cout, " ");
+for (auto e : vec)
+{
+    out_iter = e; //赋值语句实际上将元素写到cout
+}
+cout << endl;
+
+//*和++实际上对ostream_iterator对象不做任何事情，推荐第一种写法，可以与其他类型的迭代器保持一致。
+```
+
+```C++
+//通过调用copy打印vec中的元素
+copy(vec.begin(), vec.end(), out_iter);
+cout << endl;
+```
+
+- 使用流迭代器处理类类型，可以为任何定义了>>的类创建istream_iterator对象。只要有<<，就可以定义ostream_iterator
+
+```c++
+//使用IO迭代器重写1.6节书店程序
+istream_iterator<Sales_item> item_iter(cin), eof;
+ostream_iterator<Sales_item> out_iter(cout, "\n");
+//将第一笔交易记录记录在sum中，并读取下一条记录
+Sales_item sum = *item_iter++;
+while (item_iter != eof)
+{
+    //如果当前交易记录（存在item_iter中）有着相同的ISBN号
+    if (item_iter->isbn() == sum.isbn())
+    {
+        sum += *item_iter++; //将其加到sum上并读取下一条记录
+    }
+    else
+    {
+        out_iter = sum; //输出sum当前值
+        sum = *item_iter++; //读取下一条记录
+    }
+}
+out_iter = sum; //打印最后一组记录的和
+```
+
+- 反向迭代器，从容器尾元素向首元素反向移动的迭代器。递增和递减的操作会倒过来。++移动到前一个元素，--移动到后一个元素。除了forward_list外，其他容器都支持反向迭代器。rbegin、rend、crbegin和crend成员函数获得反向迭代器。
+
+```c++
+//逆序打印vec中的元素
+vector<int> vec = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+for (auto r_iter = vec.crbegin(); r_iter != vec.crend(); ++r_iter)
+{
+    cout << *r_iter << endl;
+}
+
+//sort传递反向迭代器将vector整理为递减序
+sort(vec.begin(), vec.end()); //按“正常序”排序vec
+//按逆序排序，将最小元素放在vec末尾
+sort(vec.rbegin(),  vec.rend());
+```
+
+- 反向迭代器和其他迭代器间的关系
+
+```c++
+//打印line中的第一个单词
+//在一个逗号分隔符的列表中查找第一个元素
+auto comma = find(line.cbegin(), line.cend(), ',');
+cout << string(line.cbegin(), comma) << endl;
+//如果line中有逗号，comma指向逗号；否则，它等于line.cend()。打印line.cbegin()到comma之间的内容
+
+//打印最后一个单词，使用反向迭代器
+auto rcomma = find(line.crbegin(), line.crend(), ',');
+
+//错误：将逆序输出单词的字符
+cout << string(line.crbegin(), rcomma) << endl;
+//通过调用reverse_iterator的base成员函数将反向迭代器转为普通迭代器（反向迭代器指向','，普通迭代器指向','下一个字符），例如FIRST,MIDDLE,LAST，反向迭代器指向最后一个','，转换后的普通迭代器指向L
+cout << string(rcomma.base(), line.cend()) << endl; //正确
+```
+
+- 泛型算法结构。算法要求的迭代器分为5个迭代器类比
+
+![2022-07-14 16-43-50 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 16-43-50 的屏幕截图.png)
+
+- 迭代器类别
+
+1. 输入迭代器，可以读取序列中的元素，支持的操作：
+
+（1）==、!=
+
+（2）++
+
+（3）*，解引用只会出现在赋值操作的右侧
+
+（4）->，等价于(*it).member
+
+输入迭代器只用于顺序访问。find和accumulate要求输入迭代器，istream_iterator是一种输入迭代器
+
+2. 输出迭代器，输入迭代器功能上的补集，只写而不读元素。支持的操作：
+
+（1）++
+
+（2）*，只出现在赋值运算符的左侧
+
+输出迭代器只能赋值一次，只能用于单遍扫描算法。copy函数第三个参数就是输出迭代器。ostream_iterator是输出迭代器
+
+3. 前向迭代器，可读写元素，只能向一个方向移动。支持所有输入和输出迭代器的操作，可以多次读写同一个元素。可以对序列进行多遍扫描。算法replace要求前向迭代器，forward_list上的迭代器是前向迭代器。
+4. 双向迭代器，可以正向/反向读写序列元素，除支持前向迭代器操作外，还支持--运算符。算法reverse要求双向迭代器，除了forward_list外，其他标准库提供的都符合双向迭代器。
+5. 随机访问迭代器，提供在常量时间内访问序列中任何元素的能力，满足以上所有功能。此外还支持：
+
+（1）比较两个迭代器位置关系，<、<=、>、>=
+
+（2）迭代器和一个整数加减运算，+、+=、-、-=
+
+（3）两个迭代器相减运算（-）
+
+（4）下标运算符。
+
+- 算法型参模式
+
+```c++
+//大多数算法具有以下四种形式之一
+alg(beg, end, other args);
+alg(beg, end, dest, other args);
+alg(beg, end, beg2, other args);
+alg(beg, end, beg2, end2, other args);
+```
+
+- 算法命名
+
+```c++
+//从v1中删除奇数
+remove_if(v1.begin(), ve.end(), [](int i) { return i % 2; });
+//将偶数元素从v1拷贝到v2；v1不变
+remove_copy_if(v1.begin(), v1.end(), back_inserter(v2), [](int i) { return i% 2; });
+```
+
+- 特定容器算法，链表类型list和forward_list定义了几个成员函数形式的算法。它们独有sort、merge、remove、reverse和unique。通用版本sort要求随即访问迭代器，不能用于list和forward_list。因为这两个类型分别提供双向迭代器和前向迭代器。
+
+![2022-07-14 17-12-41 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 17-12-41 的屏幕截图.png)
+
+![2022-07-14 17-13-59 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-14 17-13-59 的屏幕截图.png)
+
+
+
+- 链表特有的操作会改变容器，链表特有版本和通用版本的区别是链表版本的操作会改变底层的容器。例如，remove的链表版本会删除指定元素。unique的链表版本会删除第二个和后继的重复元素。类似的，merge和splice会销毁其参数。通用版merge将合并的序列写到一个给定的目的迭代器；两个输入序列是不变的。而链表版本的merge函数会销毁给定的链表——元素从参数指定的链表中删除，被合并到调用merge的链表对象。在merge后，俩链表的元素依然存在，但它们在同一链表中。
 
