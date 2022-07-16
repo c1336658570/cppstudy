@@ -3461,11 +3461,53 @@ get方法返回的是一个内置指针类型，而非智能指针类型。该�
 
 ![2022-07-15 17-01-20 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 17-01-20 的屏幕截图.png)
 
+![2022-07-16 09-28-43 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-16 09-28-43 的屏幕截图.png)
 
+默认下shared_ptr使用delete销毁它指向的对象。shared_ptr不支持下标运算，不能进行下标运算
 
+```c++
+//shared_ptr未定义下标运算，且不支持指针的算术运算
+for (size_t i = 0; i != 10; ++i)
+{
+    *(sp.get() + i) = i; //使用get获取一个内值指针。
+}
+```
 
+![2022-07-16 09-34-49 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-16 09-34-49 的屏幕截图.png)
 
+- allocator分配未构造的内存，construct成员函数在沟定位值构造一个元素
 
+```c++
+auto q = p; //q指向最后构造的元素之后的位置
+alloc.construct(q++); //*q为空串
+alloc.construct(q++, 10, 'c'); //*q为cccccccccc
+alloc.construct(q++, "hi"); //*q为hi
+
+cout << *q << endl; //正确，使用string的输出运算符
+cout << *p << endl; //灾难，q指向未构造的内存！
+
+//使用完对象后，必须对每个构造的元素调destroy来销毁它们。destroy接受一个指针
+while (q != p)
+{
+    alloc.destroy(--q); //释放我们真正构造的string
+}
+//一旦元素被销毁后，可以重新使用这部分内存来保存其他string，也可以将其归还给系统。释放内存通过调用deallocate完成
+alloc.deallocate(p, n);
+```
+
+- 拷贝和填充未初始化内存的算法
+
+![2022-07-16 09-42-52 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-16 09-42-52 的屏幕截图.png)
+
+```c++
+//假定有一个int的vector，将分配比vector中元素所占空间大一倍的动态内存，然后将原vector中的元素拷贝到前一半空间，对后一半空间用一个给定值进行填充
+//分配比vi中元素所占空间大一倍的动态内存
+auto p = alloc.allocate(vi.size() * 2);
+//通过拷贝vi中的元素来构造从p开始的元素
+auto q = uninitialized_copy(vi.begin(), vi.end(), p); //返回指向最后一个构造元素之后的位置
+//将剩余元素初始化为42
+uninitialized_fill_n(q, vi.size(), 42);
+```
 
 
 
