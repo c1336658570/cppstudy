@@ -3270,23 +3270,196 @@ auto cnt = authors.erase("Brath, John");
 map <string, size_t> word_count; //empty map
 //插入一个关键字为Anna的元素，并进行值初始化；然后将1赋予它
 word_count["Anna"] = 1;
+//1.在word_count中找Anna的元素，未找到。
+//2.将一个新的关键字-值对插入到word_count中。关键字是const string，保存Anna，值进行值初始化，本例中为0
+//3.提取出插入的元素，并赋值为1
 ```
 
+![2022-07-15 14-00-27 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 14-00-27 的屏幕截图.png)
+
+- 使用map下标运算和解引用返回的类型是不一样的，下标操作会获得一个mapped_type对象，解引用会获得value_type对象。map下标运算返回的是一个左值，可以读也可以写。
+
+```c++
+cout << word_count["Anna"]; //用Anna作为下标提取元素；会打印出1
+++word_count["Anna"]; //提取元素，将其增1
+cout << word_count["Anna"]; //提取元素并打印它，2
+```
+
+- 访问元素，只关心一个元素是否在容器中，find可能是最佳选择。对不允许重复关键字的容器，find还是count没什么区别。有重复的关键字容器，count会做更多工作：如果元素在容器中，他还会统计有多少个元素有相同的关键字。如ugo不需要计数，最好使用find
+
+```c++
+set<int> iset = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+iset.find(1); //返回一个迭代器，指向key==1的元素
+iset.find(11); //返回一个迭代器，其值等于iset.end()
+iset.count(1); //返回1
+iset.count(11); //返回0
+```
+
+![2022-07-15 14-08-20 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 14-08-20 的屏幕截图.png)
+
+- 对map使用find代替下标操作，使用下标如果元素不存在会添加，只想知道元素是否存在应该使用find
+
+```c++
+if (word_count,find("foobar") == word_count.end())
+{
+    cout << "foobar is not in the map" << endl;
+}
+```
+
+- 在multimap或multiset中查找元素
+
+```c++
+//查特定作者的所有著作
+string search_item("Alain de Botton"); //作者名
+auto entries = authors.count(search_item); //元素数量
+auto iter = authors.find(search_item); //第一本书名字
+while (entries)
+{
+    cout << iter->second << endl;
+    ++iter; //前进到下一本书
+    --entries; //记录已经打印了多少本书
+}
+```
+
+- 一种不同的，面向迭代器的解决方法，lower_bound和upper_bound都接受一个参数，lower_bound返回指向第一个具有给定关键字的元素，upper_bound返回指向第最后一个具有给定关键字的元素之后的位置。如果不存在关键字，则它们都会返回相等的迭代器——指向一个不影响排序的关键字插入位置。使用lower_bound和upper_bound会得到一个迭代器范围，表示所有具有该关键字元素的范围。如果查找的元素具有容器中最大的关键字，则upper_bound返回尾后迭代器。如果关键字不存在，且大于容器中任何关键字，则lowe_bound返回尾后迭代器。
+
+```c++
+//打印书目
+for (auto beg = authors.lower_bound(search_item), end = authors.upper_bound(search_item);
+    beg != end; ++beg)
+{
+    cout << beg->second << endl;
+}
+```
+
+- equal_range函数，此函数接受一个关键字，返回一个迭代器pair。若关键字存在，则第一个迭代器指向第一个与关键字匹配的元素，第二个迭代器指向最后一个匹配元素之后的位置。若未找到匹配元素，则两个迭代器都指向关键字可以插入的位置
+
+```c++
+for (auto pos = authors.euqal_range(search_item);
+    pos.first != pos.second; ++pos.first)
+{
+    cout << pos.first->second << endl;
+}
+```
+
+- 一个单词转换的map，给定一个string，转换成另一个string。输入是两个文件，一个保存一些规则，用来转换第二个文本文件。每条规则由两部分组成，一个可能出现在输入文件中的单词和一个用来替换它的短语。每当第一个单词出现在输入中时，就将他替换成相应的短语。第二个输入文件包含要转换的文本。
+
+![2022-07-15 14-39-52 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 14-39-52 的屏幕截图.png)
+
+- 单词转换程序，使用3个函数。word_transform管理整个过程。接受两个ifstream参数，第一个绑定到单词转换文件，第二个绑定到我们要转换的文本文件。函数buildMap会读取转换规则文件，并创建一个map，用于保存每个单词到其转换内容的映射。函数transform接受一个string，如果存在转换规则，返回转换后的内容
+
+```c++
+void word_transform(ifstream &map_file, ifstream &input)
+{
+    auto trans_map = buildMap(map_file); //保存转换规则
+    string text; //保存输入中的每一行
+    while (getline(input, text))
+    {                               //读取一行输入
+        istringstream stream(text); //读取每个单词
+        string word;
+        bool firstword = true; //控制是否打印空格
+        while (stream >> word)
+        {
+            if (firstword)
+                firstword = false;
+            else
+                cout << " "; //在单词间打印一个空格
+            // transform返回它的第一个参数或转后之后的形式
+            cout << transform(word, trans_map); //打印输出
+        }
+        cout << endl; //完成一行交换
+    }
+}
+
+//建立转换映射
+map<string, string> buildMap(ifstream &map_file)
+{
+    map<string, string> trans_map; //保存转换规则
+    string key;                    //要转换的单词
+    string value;                  //替换后的内容
+    //读取第一个单词存入key中，行中剩余内容存入value
+    while (map_file >> key && getline(map_file, value))//getline不会跳过前导空格
+        if (value.size() > 1)                 //检测是有转换规则
+            trans_map[key] = value.substr(1); //跳过前导空格
+        else
+            throw runtime_error("no rule for " + key);
+    return trans_map;
+}
+
+//生成转换文本
+const string &
+transform(const string &s, const map<string, string> &m)
+{
+    //实际的转换工作
+    auto map_it = m.find(s);
+    //如果单词在转换规则map中
+    if (map_it != m.cend())
+        return map_it->second; //使用替换短语
+    else
+        return s; //否则返回原string
+}
+```
+
+- 无序容器，有4个无序关联容器，这些容器不是使用比较运算符来组织元素，而是使用哈希函数和关键字类型的==运算符。
+- 使用无序容器，无序容器也提供了有序容器相同的操作（find、insert等）。通常可以用无须容器替换对应的有序容器，反之亦然。
+
+```c++
+//单词计数程序
+unordered_map<string, size_t> word_count;  
+string word;
+while (cin >> word)
+    ++word_count[word]; //提取并递增word的计数器
+
+for (const auto &w : word_count) //对map中的每个元素
+    //打印结果
+    cout <<  w.first << " occurs " << w.second 
+    << ((w.second > 1) ? " times" : " time") << endl;
+```
+
+- 管理桶。无序容器在存储上组织为一组存储桶，每个桶保存零个或多个元素。无序容器使用一个哈希函数将元素映射到桶。为了访问一个元素，容器首先计算元素的哈希值，他指出应该搜索哪个桶。容器将具有一个特定哈希值的所有元素保存在相同的桶中。因此，无序容器的性能依赖于哈希函数的质量和桶的数量和大小。对于相同的参数，哈希函数必须总是产生相同的结果。理想情况下，哈希函数还能将每个特定的值映射到唯一的同。但是，将不同关键字的元素映射到相同的桶也是允许的。
+
+![2022-07-15 15-05-44 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 15-05-44 的屏幕截图.png)
+
+- 无序容器对关键字类型的要求，默认下，无序容器使用关键字类型==运算符来比较元素，它们还使用一个hash<key_type>类型对象来生成每个元素的哈希值。标注库为内置类型（包括指针）提供了hash模板。还为一些标准库类型，包括string和智能指针类型定义了hash。因此，我们可以直接定义关键字时内置类型（包括指针类型）、string还是智能指针类型的无序容器。但是，我们不能直接定义关键字类型为自定义类型的无序容器。与容器不同，不能直接使用哈希模板，而必须提供自己的hash模板版本。我们不使用默认的hash，而是另一种方法，类似于为有序容器重载关键字类型的默认比较操作。为了能将Sale_data作为关键字，我们需要提供函数来代替==运算符和哈希值计算函数。
+
+```c++
+size_t hasher(const Sales_data &sd)
+{
+    return hash<string>()(sa.isbn());
+}
+bool eqOp(const Sales_data &lhs, const Sales_data &rhs)
+{
+    return lhs.isbn() == rhs.isbn();
+}
+
+//hasher函数使用标准库hash类型计算ISBN成员的哈希值，该hash类型建立在string类型之上。eqOp函数通过比较ISBN号来比较两个Sales_data
+//使用这些函数来定义一个unordered_multiset
+using SD_multiset = unordered_multiset<Sales_data, decltype(hasher)*, decltype(eqOp)*>;
+//参数是桶大小、哈希函数指针和相等性判断运算符指针
+SD_multiset bookstore(42, hasher, eqOp);
+
+//如果类定义了==运算符，则只需要重载哈希函数
+//使用fooHash生成哈希值；Foo必须有==运算符
+unordered_set<Foo, decltype(FooHash)*> fooSet(10, FooHash);
+```
+
+## chap 12动态内存与智能指针
+
+![2022-07-15 15-42-01 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 15-42-01 的屏幕截图.png)
+
+get方法返回的是一个内置指针类型，而非智能指针类型。该指针不能被delete，也不能绑定到智能指针上。
 
 
 
+![2022-07-15 16-31-56 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 16-31-56 的屏幕截图.png)
 
+- unique_ptr
 
+![2022-07-15 16-55-12 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 16-55-12 的屏幕截图.png)
 
+- weak_ptr
 
-
-
-
-
-
-
-
-
+![2022-07-15 17-01-20 的屏幕截图](/home/cccmmf/cppstudy/C++primer/2022-07-15 17-01-20 的屏幕截图.png)
 
 
 
